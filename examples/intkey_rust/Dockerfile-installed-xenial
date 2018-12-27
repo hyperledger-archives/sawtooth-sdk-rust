@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# docker build -f sdk/examples/intkey_rust/Dockerfile-installed-bionic -t sawtooth-intkey-tp-rust .
+# docker build -f examples/intkey_rust/Dockerfile-installed-xenial -t sawtooth-intkey-tp-rust .
 
 # -------------=== intkey rust build ===-------------
-FROM ubuntu:bionic as intkey-rust-builder
+FROM ubuntu:xenial as intkey-rust-builder
 
 ENV VERSION=AUTO_STRICT
 
@@ -41,14 +41,14 @@ RUN /root/.cargo/bin/cargo install cargo-deb
 
 COPY . /project
 
-WORKDIR /project/sdk/examples/intkey_rust/
+WORKDIR /project/examples/intkey_rust/
 
 RUN /root/.cargo/bin/cargo deb
 
 # -------------=== intkey rust docker build ===-------------
-FROM ubuntu:bionic
+FROM ubuntu:xenial
 
-COPY --from=intkey-rust-builder /project/sdk/examples/intkey_rust/target/debian/intkey_rust_*.deb /tmp
+COPY --from=intkey-rust-builder /project/examples/intkey_rust/target/debian/intkey_rust_*.deb /tmp
 
 RUN apt-get update \
  && dpkg -i /tmp/intkey_rust_*.deb || true \

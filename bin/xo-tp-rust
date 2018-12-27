@@ -15,7 +15,7 @@
 # limitations under the License.
 # -----------------------------------------------------------------------------
 top_dir=$(cd $(dirname $(dirname $0)) && pwd)
-bin=$top_dir/sdk/examples/xo_rust/bin/xo_rust
+bin=$top_dir/examples/xo_rust/bin/xo_rust
 
 if [ -e $bin ]
 then

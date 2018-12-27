@@ -19,23 +19,23 @@ services:
   intkey-tp-rust:
     build:
       context: ../../
-      dockerfile: ./sdk/examples/intkey_rust/Dockerfile
+      dockerfile: ./examples/intkey_rust/Dockerfile
       args:
         - http_proxy
         - https_proxy
         - no_proxy
     image: sawtooth-intkey-tp-rust-local:${ISOLATION_ID}
     volumes:
-      - ../../:/project/sawtooth-core
+      - ../../:/project/sawtooth-sdk-rust
 
   xo-tp-rust:
     build:
       context: ../../
-      dockerfile: ./sdk/examples/xo_rust/Dockerfile
+      dockerfile: ./examples/xo_rust/Dockerfile
       args:
         - http_proxy
         - https_proxy
         - no_proxy
     image: sawtooth-xo-tp-rust-local:${ISOLATION_ID}
     volumes:
-      - ../../:/project/sawtooth-core
+      - ../../:/project/sawtooth-sdk-rust

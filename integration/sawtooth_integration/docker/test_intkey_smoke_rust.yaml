@@ -97,8 +97,8 @@ services:
         - no_proxy
     image: sawtooth-devmode$INSTALL_TYPE:$ISOLATION_ID
     volumes:
-      - $SAWTOOTH_CORE:/project/sawtooth-core
-    working_dir: /project/sawtooth-core/sdk/examples/devmode_rust
+      - $SAWTOOTH_SDK_RUST:/project/sawtooth-sdk-rust
+    working_dir: /project/sawtooth-sdk-rust/examples/devmode_rust
     command: devmode-engine-rust --connect tcp://validator:5005 -v
     stop_signal: SIGKILL
 
