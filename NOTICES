@@ -5,18 +5,9 @@ These components are released under separate copyright notices and license terms
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
-=> CBOR for Go and Python
-=> Serde-RS json
-=> aiohttp
-=> cryptography
-=> grpcio-tools
 => libc for Rust
 => log for Rust
-=> log4cxx
-=> pyformance
-=> python yarl
 => rand for Rust
-=> requests
 => rust ctrlc
 => rust hex
 => rust lmdb-zero
