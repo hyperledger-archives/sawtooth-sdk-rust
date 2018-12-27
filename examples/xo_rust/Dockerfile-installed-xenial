@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# docker build -f sdk/examples/xo_rust/Dockerfile-installed-xenial -t sawtooth-xo-tp-rust .
+# docker build -f examples/xo_rust/Dockerfile-installed-xenial -t sawtooth-xo-tp-rust .
 
 # -------------=== xo rust build ===-------------
 FROM ubuntu:xenial as xo-rust-builder
@@ -41,14 +41,14 @@ RUN /root/.cargo/bin/cargo install cargo-deb
 
 COPY . /project
 
-WORKDIR /project/sdk/examples/xo_rust/
+WORKDIR /project/examples/xo_rust/
 
 RUN /root/.cargo/bin/cargo deb
 
 # -------------=== xo rust docker build ===-------------
 FROM ubuntu:xenial
 
-COPY --from=xo-rust-builder /project/sdk/examples/xo_rust/target/debian/xo_rust_*.deb /tmp
+COPY --from=xo-rust-builder /project/examples/xo_rust/target/debian/xo_rust_*.deb /tmp
 
 RUN apt-get update \
  && dpkg -i /tmp/xo_rust_*.deb || true \

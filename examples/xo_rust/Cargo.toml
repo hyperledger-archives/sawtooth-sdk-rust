@@ -1,5 +1,4 @@
-#
-# Copyright 2017 Bitwise IO, Inc.
+# Copyright 2018 Bitwise IO, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,16 +13,14 @@
 # limitations under the License.
 # -----------------------------------------------------------------------------
 
-
 [package]
-name = "intkey_rust"
+name = "xo_rust"
 version = "0.8.0"
 authors = ["Bitwise IO, Inc."]
 
 [dependencies]
-sawtooth-sdk = { path = "../../rust" }
+sawtooth-sdk = { path = "../.." }
 rust-crypto = "0.2"
 clap = "2"
 log = "0.4"
 log4rs = "0.8"
-cbor-codec = "0.7"

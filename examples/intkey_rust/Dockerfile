@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# docker build -f sdk/examples/intkey_rust/Dockerfile -t sawtooth-intkey-tp-rust-local .
+# docker build -f examples/intkey_rust/Dockerfile -t sawtooth-intkey-tp-rust-local .
 
 FROM ubuntu:bionic
 
@@ -50,12 +50,12 @@ RUN curl https://sh.rustup.rs -sSf > /usr/bin/rustup-init \
  && chmod +x /usr/bin/rustup-init \
  && rustup-init -y
 
-ENV PATH=$PATH:/project/sawtooth-core/bin:/protoc3/bin:/root/.cargo/bin \
+ENV PATH=$PATH:/project/sawtooth-sdk-rust/bin:/protoc3/bin:/root/.cargo/bin \
     CARGO_INCREMENTAL=0
 
-WORKDIR /project/sawtooth-core/
+WORKDIR /project/sawtooth-sdk-rust/
 
-CMD cd sdk/examples/intkey_rust \
+CMD cd examples/intkey_rust \
  && echo "\033[0;32m--- Building intkey-tp-rust ---\n\033[0m" \
  && rm -rf ./bin/ \
  && mkdir -p ./bin/ \
