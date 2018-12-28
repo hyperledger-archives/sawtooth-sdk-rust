@@ -121,6 +121,9 @@ main() {
 }
 
 test_rust_sdk() {
+    run_docker_test ./tests/unit_rust_sdk.yaml
+    run_docker_test ./tests/test_tp_intkey_rust.yaml
+    run_docker_test ./tests/test_tp_xo_rust.yaml
     run_docker_test test_intkey_smoke_rust
 }
 

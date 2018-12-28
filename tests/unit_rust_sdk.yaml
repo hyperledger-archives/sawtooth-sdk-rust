@@ -19,15 +19,15 @@ services:
 
   unit-rust-sdk:
     build:
-      context: ../..
-      dockerfile: ./sdk/rust/rust-sdk-tests.dockerfile
+      context: ..
+      dockerfile: ./tests/rust-sdk-tests.dockerfile
       args:
         - http_proxy
         - https_proxy
         - no_proxy
     image: rust-sdk-tests:$ISOLATION_ID
     volumes:
-      - $SAWTOOTH_CORE:/project/sawtooth-core
-    working_dir: /project/sawtooth-core/sdk/rust
+      - $SAWTOOTH_SDK_RUST:/project/sawtooth-sdk-rust
+    working_dir: /project/sawtooth-sdk-rust
     # Test that the SDK compiles with default features both enabled and disabled
     command: bash -c "cargo test && cargo test --no-default-features"

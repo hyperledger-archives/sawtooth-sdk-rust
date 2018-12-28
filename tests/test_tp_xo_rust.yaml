@@ -19,15 +19,15 @@ services:
 
   xo-tp-rust:
     build:
-      context: ../../../..
-      dockerfile: ./sdk/examples/xo_rust/Dockerfile
+      context: ..
+      dockerfile: ./examples/xo_rust/Dockerfile
       args:
         - http_proxy
         - https_proxy
         - no_proxy
     image: sawtooth-xo-tp-rust$INSTALL_TYPE:$ISOLATION_ID
     volumes:
-      - $SAWTOOTH_CORE:/project/sawtooth-core
+      - $SAWTOOTH_SDK_RUST:/project/sawtooth-sdk-rust
     expose:
       - 4004
     environment:
@@ -37,26 +37,22 @@ services:
 
   test-tp-xo-rust:
     build:
-      context: ../../../..
-      dockerfile: sdk/python/tests/python-sdk-tests.dockerfile
+      context: ..
+      dockerfile: ./tests/python-sdk-tests.dockerfile
       args:
         - http_proxy
         - https_proxy
         - no_proxy
     image: python-sdk-tests:$ISOLATION_ID
     volumes:
-      - $SAWTOOTH_CORE:/project/sawtooth-core
+      - $SAWTOOTH_SDK_RUST:/project/sawtooth-sdk-rust
     expose:
       - 4004
     command: nose2-3
-        -c /project/sawtooth-core/sdk/examples/xo_python/nose2.cfg
+        -c /project/sawtooth-sdk-rust/tests/nose2.cfg
         -v
-        -s /project/sawtooth-core/sdk/examples/xo_python/tests
+        -s /project/sawtooth-sdk-rust/tests
         test_tp_xo --log-capture
     stop_signal: SIGKILL
     environment:
       TEST_BIND: "tcp://eth0:4004"
-      PYTHONPATH: "/project/sawtooth-core/sdk/python:\
-        /project/sawtooth-core/sdk/examples/xo_python:\
-        /project/sawtooth-core/integration:\
-        /project/sawtooth-core/signing"
