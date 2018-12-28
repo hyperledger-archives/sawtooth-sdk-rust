@@ -17,19 +17,6 @@ version: '3.6'
 
 services:
 
-  lint-python:
-    build:
-      context: ../
-      dockerfile: ./lint
-      args:
-        - http_proxy
-        - https_proxy
-        - no_proxy
-    image: lint:${ISOLATION_ID}
-    volumes:
-      - ../../:/project/sawtooth-core
-    command: run_lint
-
   lint-rust:
     build:
       context: ../
@@ -40,18 +27,5 @@ services:
         - no_proxy
     image: lint:${ISOLATION_ID}
     volumes:
-      - ../../:/project/sawtooth-core
+      - ../../:/project/sawtooth-sdk-rust
     command: run_lint_rust
-
-  lint-validator:
-    build:
-      context: ../
-      dockerfile: ./lint
-      args:
-        - http_proxy
-        - https_proxy
-        - no_proxy
-    image: lint:${ISOLATION_ID}
-    volumes:
-      - ../../:/project/sawtooth-core
-    command: run_lint_validator
