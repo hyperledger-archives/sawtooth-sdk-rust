@@ -59,7 +59,7 @@ RUN curl https://sh.rustup.rs -sSf > /usr/bin/rustup-init \
  && chmod +x /usr/bin/rustup-init \
  && rustup-init -y
 
-ENV PATH=$PATH:/protoc3/bin:/project/sawtooth-core/bin:/root/.cargo/bin \
+ENV PATH=$PATH:/protoc3/bin:/project/sawtooth-sdk-rust/bin:/root/.cargo/bin \
     CARGO_INCREMENTAL=0
 
 RUN rustup component add rustfmt-preview
