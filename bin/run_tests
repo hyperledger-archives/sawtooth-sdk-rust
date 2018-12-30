@@ -37,7 +37,7 @@ usage() {
 
 # Exit on non-zero exit code from subcommand
 set -e
-# Set sawtooth-core project directory relative to this file
+# Set sawtooth-sdk-rust project directory relative to this file
 PROJECT_DIR=$(cd $(dirname $(dirname $0)) && pwd)
 
 # Make sawtooth scripts accessible
