@@ -80,6 +80,10 @@ node ('master') {
                 sh 'INSTALL_TYPE="" ./bin/run_tests'
             }
 
+            stage("Build documentation") {
+                sh 'docker run -it --rm -v $(pwd):/project/sawtooth-sdk-rust sawtooth-sdk-rust-docs'
+            }
+
             stage("Create git archive") {
                 sh '''
                     REPO=$(git remote show -n origin | grep Fetch | awk -F'[/.]' '{print $6}')
@@ -91,6 +95,8 @@ node ('master') {
 
             stage("Archive Build artifacts") {
                 archiveArtifacts artifacts: '*.tgz, *.zip'
+                archiveArtifacts artifacts: 'docs/build/**'
+
             }
         }
     }

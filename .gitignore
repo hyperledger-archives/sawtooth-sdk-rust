@@ -19,6 +19,8 @@
 
 /build/
 
+/docs/build
+
 /examples/intkey_rust/target/
 /examples/intkey_rust/Cargo.lock
 /examples/intkey_rust/bin/
