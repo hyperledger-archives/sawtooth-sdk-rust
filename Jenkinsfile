@@ -79,6 +79,16 @@ node ('master') {
             stage("Run Tests") {
                 sh 'INSTALL_TYPE="" ./bin/run_tests'
             }
+
+            stage("Build documentation") {
+                sh 'docker build . -f docs/Dockerfile -t sawtooth-sdk-rust-docs:$ISOLATION_ID'
+                sh 'docker run --rm -v $(pwd):/project/sawtooth-sdk-rust sawtooth-sdk-rust-docs:$ISOLATION_ID'
+            }
+
+            stage("Archive Build artifacts") {
+                archiveArtifacts artifacts: 'docs/build/**'
+
+            }
         }
     }
 }
