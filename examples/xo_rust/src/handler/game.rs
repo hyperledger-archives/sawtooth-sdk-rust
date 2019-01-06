@@ -129,7 +129,8 @@ impl Game {
                 } else {
                     ch.to_string()
                 }
-            }).collect();
+            })
+            .collect();
         self.board = board_vec.join("");
         Ok(())
     }
