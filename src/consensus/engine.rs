@@ -67,10 +67,11 @@ impl fmt::Debug for Block {
 pub type PeerId = Vec<u8>;
 
 /// Information about a peer that is relevant to consensus
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq, Hash)]
 pub struct PeerInfo {
     pub peer_id: PeerId,
 }
+impl Eq for PeerInfo {}
 
 /// A consensus-related message sent between peers
 #[derive(Default, Debug, Clone)]
