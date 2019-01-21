@@ -171,7 +171,7 @@ impl<'a> TransactionProcessor<'a> {
     /// Connects the transaction processor to a validator and starts
     /// listening for requests and routing them to an appropriate
     /// transaction handler.
-    #[allow(cyclomatic_complexity)]
+    #[allow(clippy::cyclomatic_complexity)]
     pub fn start(&mut self) {
         let unregister = Arc::new(AtomicBool::new(false));
         let r = unregister.clone();
@@ -199,9 +199,7 @@ impl<'a> TransactionProcessor<'a> {
             }
 
             // if registration is not succesful, retry
-            if self.register(&sender, &unregister.clone()) {
-                ()
-            } else {
+            if !self.register(&sender, &unregister.clone()) {
                 continue;
             }
 

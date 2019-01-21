@@ -23,6 +23,7 @@ pub trait Service {
     // -- P2P --
 
     /// Send a consensus message to a specific, connected peer
+    #[allow(clippy::ptr_arg)]
     fn send_to(&mut self, peer: &PeerId, message_type: &str, payload: Vec<u8>)
         -> Result<(), Error>;
 

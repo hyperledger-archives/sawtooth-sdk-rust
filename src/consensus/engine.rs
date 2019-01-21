@@ -25,6 +25,7 @@ use consensus::service::Service;
 
 /// An update from the validator
 #[derive(Debug)]
+#[allow(clippy::large_enum_variant)]
 pub enum Update {
     PeerConnected(PeerInfo),
     PeerDisconnected(PeerId),
