@@ -113,7 +113,7 @@ impl Game {
                 return Err(ApplyError::InvalidTransaction(format!(
                     "Invalid state {}",
                     other_state
-                )))
+                )));
             }
         };
 
@@ -143,7 +143,7 @@ impl Game {
             (true, true) => {
                 return Err(ApplyError::InvalidTransaction(String::from(
                     "Two winners (there can only be one)",
-                )))
+                )));
             }
             (true, false) => Some(String::from("P1-WIN")),
             (false, true) => Some(String::from("P2-WIN")),

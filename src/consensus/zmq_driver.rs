@@ -317,7 +317,7 @@ fn handle_update(
         CONSENSUS_NOTIFY_PEER_DISCONNECTED => {
             let mut request: ConsensusNotifyPeerDisconnected =
                 protobuf::parse_from_bytes(msg.get_content())?;
-            Update::PeerDisconnected(request.take_peer_id().into())
+            Update::PeerDisconnected(request.take_peer_id())
         }
         CONSENSUS_NOTIFY_PEER_MESSAGE => {
             let mut request: ConsensusNotifyPeerMessage =
@@ -327,7 +327,7 @@ fn handle_update(
             let mut message = request.take_message();
             Update::PeerMessage(
                 from_consensus_peer_message(message, header),
-                request.take_sender_id().into(),
+                request.take_sender_id(),
             )
         }
         CONSENSUS_NOTIFY_BLOCK_NEW => {
@@ -338,24 +338,24 @@ fn handle_update(
         CONSENSUS_NOTIFY_BLOCK_VALID => {
             let mut request: ConsensusNotifyBlockValid =
                 protobuf::parse_from_bytes(msg.get_content())?;
-            Update::BlockValid(request.take_block_id().into())
+            Update::BlockValid(request.take_block_id())
         }
         CONSENSUS_NOTIFY_BLOCK_INVALID => {
             let mut request: ConsensusNotifyBlockInvalid =
                 protobuf::parse_from_bytes(msg.get_content())?;
-            Update::BlockInvalid(request.take_block_id().into())
+            Update::BlockInvalid(request.take_block_id())
         }
         CONSENSUS_NOTIFY_BLOCK_COMMIT => {
             let mut request: ConsensusNotifyBlockCommit =
                 protobuf::parse_from_bytes(msg.get_content())?;
-            Update::BlockCommit(request.take_block_id().into())
+            Update::BlockCommit(request.take_block_id())
         }
         CONSENSUS_NOTIFY_ENGINE_DEACTIVATED => Update::Shutdown,
         unexpected => {
             return Err(Error::ReceiveError(format!(
                 "Received unexpected message type: {:?}",
                 unexpected
-            )))
+            )));
         }
     };
 
@@ -371,9 +371,9 @@ fn handle_update(
 impl From<ConsensusBlock> for Block {
     fn from(mut c_block: ConsensusBlock) -> Block {
         Block {
-            block_id: c_block.take_block_id().into(),
-            previous_id: c_block.take_previous_id().into(),
-            signer_id: c_block.take_signer_id().into(),
+            block_id: c_block.take_block_id(),
+            previous_id: c_block.take_previous_id(),
+            signer_id: c_block.take_signer_id(),
             block_num: c_block.get_block_num(),
             payload: c_block.take_payload(),
             summary: c_block.take_summary(),
@@ -384,7 +384,7 @@ impl From<ConsensusBlock> for Block {
 impl From<ConsensusPeerInfo> for PeerInfo {
     fn from(mut c_peer_info: ConsensusPeerInfo) -> PeerInfo {
         PeerInfo {
-            peer_id: c_peer_info.take_peer_id().into(),
+            peer_id: c_peer_info.take_peer_id(),
         }
     }
 }

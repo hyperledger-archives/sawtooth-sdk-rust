@@ -16,7 +16,6 @@
  */
 
 use protobuf;
-use protobuf::Message as ProtobufMessage;
 use rand;
 use rand::Rng;
 
@@ -98,7 +97,7 @@ impl Service for ZmqService {
         let mut request = ConsensusSendToRequest::new();
         request.set_content(payload);
         request.set_message_type(message_type.into());
-        request.set_receiver_id((*peer).clone().into());
+        request.set_receiver_id((*peer).clone());
 
         let response: ConsensusSendToResponse = self.rpc(
             &request,
@@ -126,7 +125,7 @@ impl Service for ZmqService {
     fn initialize_block(&mut self, previous_id: Option<BlockId>) -> Result<(), Error> {
         let mut request = ConsensusInitializeBlockRequest::new();
         if let Some(previous_id) = previous_id {
-            request.set_previous_id(previous_id.into());
+            request.set_previous_id(previous_id);
         }
 
         let response: ConsensusInitializeBlockResponse = self.rpc(
@@ -186,7 +185,7 @@ impl Service for ZmqService {
             _ => check_ok!(response, ConsensusFinalizeBlockResponse_Status::OK),
         }?;
 
-        Ok(response.take_block_id().into())
+        Ok(response.take_block_id())
     }
 
     fn cancel_block(&mut self) -> Result<(), Error> {
@@ -228,7 +227,7 @@ impl Service for ZmqService {
 
     fn commit_block(&mut self, block_id: BlockId) -> Result<(), Error> {
         let mut request = ConsensusCommitBlockRequest::new();
-        request.set_block_id(block_id.into());
+        request.set_block_id(block_id);
 
         let response: ConsensusCommitBlockResponse = self.rpc(
             &request,
@@ -245,7 +244,7 @@ impl Service for ZmqService {
 
     fn ignore_block(&mut self, block_id: BlockId) -> Result<(), Error> {
         let mut request = ConsensusIgnoreBlockRequest::new();
-        request.set_block_id(block_id.into());
+        request.set_block_id(block_id);
 
         let response: ConsensusIgnoreBlockResponse = self.rpc(
             &request,
@@ -262,7 +261,7 @@ impl Service for ZmqService {
 
     fn fail_block(&mut self, block_id: BlockId) -> Result<(), Error> {
         let mut request = ConsensusFailBlockRequest::new();
-        request.set_block_id(block_id.into());
+        request.set_block_id(block_id);
 
         let response: ConsensusFailBlockResponse = self.rpc(
             &request,
@@ -298,7 +297,7 @@ impl Service for ZmqService {
         Ok(response
             .take_blocks()
             .into_iter()
-            .map(|block| (BlockId::from(block.block_id.clone()), Block::from(block)))
+            .map(|block| (block.block_id.clone(), Block::from(block)))
             .collect())
     }
 
@@ -326,7 +325,7 @@ impl Service for ZmqService {
         keys: Vec<String>,
     ) -> Result<HashMap<String, String>, Error> {
         let mut request = ConsensusSettingsGetRequest::new();
-        request.set_block_id(block_id.into());
+        request.set_block_id(block_id);
         request.set_keys(protobuf::RepeatedField::from_vec(keys));
 
         let mut response: ConsensusSettingsGetResponse = self.rpc(
@@ -354,7 +353,7 @@ impl Service for ZmqService {
         addresses: Vec<String>,
     ) -> Result<HashMap<String, Vec<u8>>, Error> {
         let mut request = ConsensusStateGetRequest::new();
-        request.set_block_id(block_id.into());
+        request.set_block_id(block_id);
         request.set_addresses(protobuf::RepeatedField::from_vec(addresses));
 
         let mut response: ConsensusStateGetResponse = self.rpc(
@@ -383,6 +382,7 @@ mod tests {
     use messages::validator::Message;
     use messaging::stream::MessageConnection;
     use messaging::zmq_stream::ZmqMessageConnection;
+    use protobuf::Message as ProtobufMessage;
     use std::default::Default;
     use std::thread;
     use zmq;

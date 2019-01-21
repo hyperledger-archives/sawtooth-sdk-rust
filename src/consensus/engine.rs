@@ -25,6 +25,7 @@ use consensus::service::Service;
 
 /// An update from the validator
 #[derive(Debug)]
+#[allow(clippy::large_enum_variant)]
 pub enum Update {
     PeerConnected(PeerInfo),
     PeerDisconnected(PeerId),
@@ -39,7 +40,7 @@ pub enum Update {
 pub type BlockId = Vec<u8>;
 
 /// All information about a block that is relevant to consensus
-#[derive(Clone, Default)]
+#[derive(Clone, Default, PartialEq, Hash)]
 pub struct Block {
     pub block_id: BlockId,
     pub previous_id: BlockId,
@@ -48,6 +49,7 @@ pub struct Block {
     pub payload: Vec<u8>,
     pub summary: Vec<u8>,
 }
+impl Eq for Block {}
 impl fmt::Debug for Block {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
@@ -66,10 +68,11 @@ impl fmt::Debug for Block {
 pub type PeerId = Vec<u8>;
 
 /// Information about a peer that is relevant to consensus
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq, Hash)]
 pub struct PeerInfo {
     pub peer_id: PeerId,
 }
+impl Eq for PeerInfo {}
 
 /// A consensus-related message sent between peers
 #[derive(Default, Debug, Clone)]
