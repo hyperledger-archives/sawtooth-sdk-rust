@@ -163,6 +163,23 @@ impl From<ReceiveError> for ContextError {
     }
 }
 
+pub trait Context {
+    fn get_state(&self, addresses: Vec<String>) -> Result<Option<Vec<u8>>, ContextError>;
+
+    fn set_state(&self, entries: HashMap<String, Vec<u8>>) -> Result<(), ContextError>;
+
+    fn delete_state(&self, addresses: Vec<String>) -> Result<Option<Vec<String>>, ContextError>;
+
+    fn add_receipt_data(&self, data: &[u8]) -> Result<(), ContextError>;
+
+    fn add_event(
+        &self,
+        event_type: String,
+        attributes: Vec<(String, String)>,
+        data: &[u8],
+    ) -> Result<(), ContextError>;
+}
+
 #[derive(Clone)]
 pub struct TransactionContext {
     context_id: String,
@@ -440,3 +457,38 @@ pub trait TransactionHandler {
         context: &mut TransactionContext,
     ) -> Result<(), ApplyError>;
 }
+
+pub struct TransactionContext {
+    context: Box<Context>,
+}
+
+impl TransactionContext {
+    pub fn get_state(&self, addresses: Vec<String>) -> Result<Option<Vec<u8>>, ContextError> {
+        self.context.get_state(addresses)
+    }
+
+    pub fn set_state(&self, entries: HashMap<String, Vec<u8>>) -> Result<(), ContextError> {
+        self.context.set_state(entries)
+    }
+
+    pub fn delete_state(
+        &self,
+        addresses: Vec<String>,
+    ) -> Result<Option<Vec<String>>, ContextError> {
+        self.context.delete_state(addresses)
+    }
+
+    pub fn add_receipt_data(&self, data: &[u8]) -> Result<(), ContextError> {
+        self.context.add_receipt_data(data)
+    }
+
+    pub fn add_event(
+        &self,
+        event_type: String,
+        attributes: Vec<(String, String)>,
+        data: &[u8],
+    ) -> Result<(), ContextError> {
+        self.context.add_event(event_type, attributes, data)
+    }
+}
+
