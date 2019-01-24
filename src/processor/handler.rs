@@ -28,6 +28,7 @@ use std;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::error::Error as StdError;
+use std::sync::{Arc, Mutex};
 
 use messages::events::Event;
 use messages::events::Event_Attribute;
@@ -181,12 +182,67 @@ pub trait Context {
 }
 
 #[derive(Clone)]
-pub struct TransactionContext {
+pub struct TxnContext {
+    state: Arc<Mutex<TransactionContextState>>,
+}
+
+impl TxnContext {
+    pub fn new(context_id: &str, sender: ZmqMessageSender) -> TxnContext {
+        TxnContext {
+            state: Arc::new(Mutex::new(TransactionContextState::new(context_id, sender))),
+        }
+    }
+}
+
+impl Context for TxnContext {
+    fn get_state(&self, addresses: Vec<String>) -> Result<Option<Vec<u8>>, ContextError> {
+        self.state
+            .lock()
+            .expect("The TransactionContext mutex is poisoned")
+            .get_state(addresses)
+    }
+
+    fn set_state(&self, entries: HashMap<String, Vec<u8>>) -> Result<(), ContextError> {
+        self.state
+            .lock()
+            .expect("The TransactionContext mutex is poisoned")
+            .set_state(entries)
+    }
+
+    fn delete_state(&self, addresses: Vec<String>) -> Result<Option<Vec<String>>, ContextError> {
+        self.state
+            .lock()
+            .expect("The TransactionContext mutex is poisoned")
+            .delete_state(addresses)
+    }
+
+    fn add_receipt_data(&self, data: &[u8]) -> Result<(), ContextError> {
+        self.state
+            .lock()
+            .expect("The TransactionContext mutex is poisoned")
+            .add_receipt_data(data)
+    }
+
+    fn add_event(
+        &self,
+        event_type: String,
+        attributes: Vec<(String, String)>,
+        data: &[u8],
+    ) -> Result<(), ContextError> {
+        self.state
+            .lock()
+            .expect("The TransactionContext mutex is poisoned")
+            .add_event(event_type, attributes, data)
+    }
+}
+
+#[derive(Clone)]
+struct TransactionContextState {
     context_id: String,
     sender: ZmqMessageSender,
 }
 
-impl TransactionContext {
+impl TransactionContextState {
     /// Context provides an interface for getting, setting, and deleting
     /// validator state. All validator interactions by a handler should be
     /// through a Context instance.
@@ -195,8 +251,8 @@ impl TransactionContext {
     ///
     /// * `sender` - for client grpc communication
     /// * `context_id` - the context_id passed in from the validator
-    pub fn new(context_id: &str, sender: ZmqMessageSender) -> TransactionContext {
-        TransactionContext {
+    fn new(context_id: &str, sender: ZmqMessageSender) -> TransactionContextState {
+        TransactionContextState {
             context_id: String::from(context_id),
             sender,
         }
@@ -210,7 +266,7 @@ impl TransactionContext {
     ///
     /// * `addresses` - the addresses to fetch
     #[allow(clippy::needless_pass_by_value)]
-    pub fn get_state(&mut self, addresses: Vec<String>) -> Result<Option<Vec<u8>>, ContextError> {
+    fn get_state(&mut self, addresses: Vec<String>) -> Result<Option<Vec<u8>>, ContextError> {
         let mut request = TpStateGetRequest::new();
         request.set_context_id(self.context_id.clone());
         request.set_addresses(RepeatedField::from_vec(addresses.to_vec()));
@@ -259,7 +315,7 @@ impl TransactionContext {
     /// * `address` - address of where to store the data
     /// * `paylaod` - payload is the data to store at the address
     #[allow(clippy::needless_pass_by_value)]
-    pub fn set_state(&mut self, entries: HashMap<String, Vec<u8>>) -> Result<(), ContextError> {
+    fn set_state(&mut self, entries: HashMap<String, Vec<u8>>) -> Result<(), ContextError> {
         let state_entries: Vec<TpStateEntry> = entries
             .iter()
             .map(|(address, payload)| {
@@ -305,7 +361,7 @@ impl TransactionContext {
     ///
     /// * `addresses` - the addresses to fetch
     #[allow(clippy::needless_pass_by_value)]
-    pub fn delete_state(
+    fn delete_state(
         &mut self,
         addresses: Vec<String>,
     ) -> Result<Option<Vec<String>>, ContextError> {
@@ -345,7 +401,7 @@ impl TransactionContext {
     /// # Arguments
     ///
     /// * `data` - the data to add
-    pub fn add_receipt_data(&mut self, data: &[u8]) -> Result<(), ContextError> {
+    fn add_receipt_data(&mut self, data: &[u8]) -> Result<(), ContextError> {
         let mut request = TpReceiptAddDataRequest::new();
         request.set_context_id(self.context_id.clone());
         request.set_data(Vec::from(data));
@@ -384,7 +440,7 @@ impl TransactionContext {
     ///          validator. Attributes can be used by subscribers to filter the type of events
     ///          they receive.
     /// * `data` - Additional information about the event that is opaque to the validator.
-    pub fn add_event(
+    fn add_event(
         &mut self,
         event_type: String,
         attributes: Vec<(String, String)>,
@@ -492,3 +548,10 @@ impl TransactionContext {
     }
 }
 
+impl From<TxnContext> for TransactionContext {
+    fn from(other: TxnContext) -> Self {
+        TransactionContext {
+            context: Box::new(other),
+        }
+    }
+}
