@@ -31,12 +31,12 @@ pub fn get_xo_prefix() -> String {
 }
 
 pub struct XoState<'a> {
-    context: &'a mut TransactionContext,
+    context: &'a TransactionContext,
     address_map: HashMap<String, Option<String>>,
 }
 
 impl<'a> XoState<'a> {
-    pub fn new(context: &'a mut TransactionContext) -> XoState {
+    pub fn new(context: &'a TransactionContext) -> XoState {
         XoState {
             context,
             address_map: HashMap::new(),

@@ -160,12 +160,12 @@ impl IntkeyPayload {
 }
 
 pub struct IntkeyState<'a> {
-    context: &'a mut TransactionContext,
+    context: &'a TransactionContext,
     get_cache: HashMap<String, BTreeMap<Key, Value>>,
 }
 
 impl<'a> IntkeyState<'a> {
-    pub fn new(context: &'a mut TransactionContext) -> IntkeyState {
+    pub fn new(context: &'a TransactionContext) -> IntkeyState {
         IntkeyState {
             context,
             get_cache: HashMap::new(),
@@ -272,7 +272,7 @@ impl TransactionHandler for IntkeyTransactionHandler {
     fn apply(
         &self,
         request: &TpProcessRequest,
-        context: &mut TransactionContext,
+        context: &TransactionContext,
     ) -> Result<(), ApplyError> {
         let payload = IntkeyPayload::new(request.get_payload());
         let payload = match payload {

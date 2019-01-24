@@ -57,7 +57,7 @@ impl TransactionHandler for XoTransactionHandler {
     fn apply(
         &self,
         request: &TpProcessRequest,
-        context: &mut TransactionContext,
+        context: &TransactionContext,
     ) -> Result<(), ApplyError> {
         let header = &request.header;
         let signer = match &header.as_ref() {
