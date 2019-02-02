@@ -35,6 +35,7 @@ clap = "2"
 log = "0.4"
 log4rs = "0.8"
 cbor-codec = "0.7"
+protobuf="2.0"
 
 [features]
 default = []

@@ -22,6 +22,7 @@ extern crate crypto;
 #[macro_use]
 extern crate log;
 extern crate log4rs;
+extern crate protobuf;
 extern crate sawtooth_sdk;
 
 mod handler;
@@ -33,6 +34,7 @@ use log4rs::encode::pattern::PatternEncoder;
 
 use std::process;
 
+use sawtooth_sdk::messages::processor::TpRegisterRequest_TpProcessRequestHeaderStyle;
 use sawtooth_sdk::processor::TransactionProcessor;
 
 use handler::IntkeyTransactionHandler;
@@ -92,5 +94,7 @@ fn main() {
     info!("Console logging level: {}", console_log_level);
 
     processor.add_handler(&handler);
+    // Request transaction header bytes in TpProcessRequest
+    processor.set_header_style(TpRegisterRequest_TpProcessRequestHeaderStyle::RAW);
     processor.start();
 }

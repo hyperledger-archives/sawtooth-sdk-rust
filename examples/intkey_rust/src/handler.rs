@@ -31,6 +31,7 @@ use cbor::value::Text;
 use cbor::value::Value;
 
 use sawtooth_sdk::messages::processor::TpProcessRequest;
+use sawtooth_sdk::messages::transaction::TransactionHeader;
 use sawtooth_sdk::processor::handler::ApplyError;
 use sawtooth_sdk::processor::handler::TransactionContext;
 use sawtooth_sdk::processor::handler::TransactionHandler;
@@ -288,13 +289,24 @@ impl TransactionHandler for IntkeyTransactionHandler {
 
         let mut state = IntkeyState::new(context);
 
+        // Got transaction header bytes, de-serialize it to get input and output fields
+        let header: TransactionHeader =
+            match protobuf::parse_from_bytes(&request.get_header_bytes()) {
+                Ok(transaction_header) => transaction_header,
+                Err(_) => {
+                    return Err(ApplyError::InvalidTransaction(String::from(
+                        "Failed to de-serialize header bytes from request",
+                    )));
+                }
+            };
+
         info!(
             "payload: {} {} {} {} {}",
             payload.get_verb(),
             payload.get_name(),
             payload.get_value(),
-            request.get_header().get_inputs()[0],
-            request.get_header().get_outputs()[0]
+            header.get_inputs()[0],
+            header.get_outputs()[0]
         );
 
         match payload.get_verb() {
