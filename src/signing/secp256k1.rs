@@ -55,6 +55,10 @@ impl Secp256k1PrivateKey {
         hex_str_to_bytes(s).map(|key_bytes| Secp256k1PrivateKey { private: key_bytes })
     }
 
+    pub fn from_bytes(s: Vec<u8>) -> Self {
+        Secp256k1PrivateKey { private: s }
+    }
+
     #[cfg(feature = "pem")]
     pub fn from_pem(s: &str) -> Result<Self, Error> {
         let ec_key = EcKey::private_key_from_pem(s.as_bytes())?;
@@ -120,6 +124,10 @@ pub struct Secp256k1PublicKey {
 impl Secp256k1PublicKey {
     pub fn from_hex(s: &str) -> Result<Self, Error> {
         hex_str_to_bytes(s).map(|key_bytes| Secp256k1PublicKey { public: key_bytes })
+    }
+
+    pub fn from_bytes(s: Vec<u8>) -> Self {
+        Secp256k1PublicKey { public: s }
     }
 }
 
