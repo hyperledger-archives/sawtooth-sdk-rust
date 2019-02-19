@@ -181,12 +181,12 @@ pub trait Context {
 }
 
 #[derive(Clone)]
-pub struct TransactionContext {
+pub struct ZmqContext {
     context_id: String,
     sender: ZmqMessageSender,
 }
 
-impl TransactionContext {
+impl ZmqContext {
     /// Context provides an interface for getting, setting, and deleting
     /// validator state. All validator interactions by a handler should be
     /// through a Context instance.
@@ -195,13 +195,15 @@ impl TransactionContext {
     ///
     /// * `sender` - for client grpc communication
     /// * `context_id` - the context_id passed in from the validator
-    pub fn new(context_id: &str, sender: ZmqMessageSender) -> TransactionContext {
-        TransactionContext {
+    pub fn new(context_id: &str, sender: ZmqMessageSender) -> Self {
+        ZmqContext {
             context_id: String::from(context_id),
             sender,
         }
     }
+}
 
+impl Context for ZmqContext {
     /// get_state queries the validator state for data at each of the
     /// addresses in the given list. The addresses that have been set
     /// are returned.
@@ -209,8 +211,7 @@ impl TransactionContext {
     /// # Arguments
     ///
     /// * `addresses` - the addresses to fetch
-    #[allow(clippy::needless_pass_by_value)]
-    pub fn get_state(&mut self, addresses: Vec<String>) -> Result<Option<Vec<u8>>, ContextError> {
+    fn get_state(&self, addresses: &[String]) -> Result<Vec<(String, Vec<u8>)>, ContextError> {
         let mut request = TpStateGetRequest::new();
         request.set_context_id(self.context_id.clone());
         request.set_addresses(RepeatedField::from_vec(addresses.to_vec()));
@@ -226,18 +227,15 @@ impl TransactionContext {
         let response: TpStateGetResponse = protobuf::parse_from_bytes(future.get()?.get_content())?;
         match response.get_status() {
             TpStateGetResponse_Status::OK => {
-                let entry = match response.get_entries().first() {
-                    Some(x) => x,
-                    None => {
-                        return Err(ContextError::ResponseAttributeError(String::from(
-                            "TpStateGetResponse is missing entries.",
-                        )));
+                let mut entries = Vec::new();
+                for entry in response.get_entries() {
+                    match entry.get_data().len() {
+                        0 => continue,
+                        _ => entries
+                            .push((entry.get_address().to_string(), Vec::from(entry.get_data()))),
                     }
-                };
-                match entry.get_data().len() {
-                    0 => Ok(None),
-                    _ => Ok(Some(Vec::from(entry.get_data()))),
                 }
+                Ok(entries)
             }
             TpStateGetResponse_Status::AUTHORIZATION_ERROR => {
                 Err(ContextError::AuthorizationError(format!(
@@ -258,10 +256,9 @@ impl TransactionContext {
     ///
     /// * `address` - address of where to store the data
     /// * `paylaod` - payload is the data to store at the address
-    #[allow(clippy::needless_pass_by_value)]
-    pub fn set_state(&mut self, entries: HashMap<String, Vec<u8>>) -> Result<(), ContextError> {
+    fn set_state(&self, entries: HashMap<String, Vec<u8>>) -> Result<(), ContextError> {
         let state_entries: Vec<TpStateEntry> = entries
-            .iter()
+            .into_iter()
             .map(|(address, payload)| {
                 let mut entry = TpStateEntry::new();
                 entry.set_address(address.to_string());
@@ -304,14 +301,10 @@ impl TransactionContext {
     /// # Arguments
     ///
     /// * `addresses` - the addresses to fetch
-    #[allow(clippy::needless_pass_by_value)]
-    pub fn delete_state(
-        &mut self,
-        addresses: Vec<String>,
-    ) -> Result<Option<Vec<String>>, ContextError> {
+    fn delete_state(&self, addresses: &[String]) -> Result<Option<Vec<String>>, ContextError> {
         let mut request = TpStateDeleteRequest::new();
         request.set_context_id(self.context_id.clone());
-        request.set_addresses(RepeatedField::from_vec(addresses.clone()));
+        request.set_addresses(RepeatedField::from_slice(addresses));
 
         let serialized = request.write_to_bytes()?;
         let x: &[u8] = &serialized;
@@ -345,7 +338,7 @@ impl TransactionContext {
     /// # Arguments
     ///
     /// * `data` - the data to add
-    pub fn add_receipt_data(&mut self, data: &[u8]) -> Result<(), ContextError> {
+    fn add_receipt_data(&self, data: &[u8]) -> Result<(), ContextError> {
         let mut request = TpReceiptAddDataRequest::new();
         request.set_context_id(self.context_id.clone());
         request.set_data(Vec::from(data));
@@ -384,8 +377,8 @@ impl TransactionContext {
     ///          validator. Attributes can be used by subscribers to filter the type of events
     ///          they receive.
     /// * `data` - Additional information about the event that is opaque to the validator.
-    pub fn add_event(
-        &mut self,
+    fn add_event(
+        &self,
         event_type: String,
         attributes: Vec<(String, String)>,
         data: &[u8],
