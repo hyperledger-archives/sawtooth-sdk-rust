@@ -163,6 +163,89 @@ impl From<ReceiveError> for ContextError {
     }
 }
 
+pub trait TransactionContext {
+    #[deprecated(
+        since = "0.3.0",
+        note = "please use `get_state_entry` or `get_state_entries` instead"
+    )]
+    /// get_state queries the validator state for data at each of the
+    /// addresses in the given list. The addresses that have been set
+    /// are returned. get_state is deprecated, please use get_state_entry or get_state_entries
+    /// instead
+    ///
+    /// # Arguments
+    ///
+    /// * `addresses` - the addresses to fetch
+    fn get_state(&self, addresses: &[String]) -> Result<Vec<(String, Vec<u8>)>, ContextError> {
+        self.get_state_entries(addresses)
+    }
+
+    /// get_state_entry queries the validator state for data at the
+    /// address given. If the  address is set, the data is returned.
+    ///
+    /// # Arguments
+    ///
+    /// * `address` - the address to fetch
+    fn get_state_entry(&self, addresses: &str) -> Result<Option<Vec<u8>>, ContextError>;
+
+    /// get_state_entries queries the validator state for data at each of the
+    /// addresses in the given list. The addresses that have been set
+    /// are returned.
+    ///
+    /// # Arguments
+    ///
+    /// * `addresses` - the addresses to fetch
+    fn get_state_entries(
+        &self,
+        addresses: &[String],
+    ) -> Result<Vec<(String, Vec<u8>)>, ContextError>;
+
+    #[deprecated(
+        since = "0.3.0",
+        note = "please use `set_state_entry` or `set_state_entries` instead"
+    )]
+    /// set_state requests that each address in the provided map be
+    /// set in validator state to its corresponding value.
+    ///
+    /// # Arguments
+    ///
+    /// * `entries` - entries are a hashmap where the key is and address and value is the data
+    fn set_state(&self, entries: HashMap<String, Vec<u8>>) -> Result<(), ContextError>;
+
+    /// delete_state requests that each of the provided addresses be unset
+    /// in validator state. A list of successfully deleted addresses
+    ///  is returned.
+    ///
+    /// # Arguments
+    ///
+    /// * `addresses` - the addresses to fetch
+    fn delete_state(&self, addresses: &[String]) -> Result<Option<Vec<String>>, ContextError>;
+
+    /// add_receipt_data adds a blob to the execution result for this transaction
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - the data to add
+    fn add_receipt_data(&self, data: &[u8]) -> Result<(), ContextError>;
+
+    /// add_event adds a new event to the execution result for this transaction.
+    ///
+    /// # Arguments
+    ///
+    /// * `event_type` -  This is used to subscribe to events. It should be globally unique and
+    ///         describe what, in general, has occured.
+    /// * `attributes` - Additional information about the event that is transparent to the
+    ///          validator. Attributes can be used by subscribers to filter the type of events
+    ///          they receive.
+    /// * `data` - Additional information about the event that is opaque to the validator.
+    fn add_event(
+        &self,
+        event_type: String,
+        attributes: Vec<(String, String)>,
+        data: &[u8],
+    ) -> Result<(), ContextError>;
+}
+
 #[derive(Clone)]
 pub struct TransactionContext {
     context_id: String,
