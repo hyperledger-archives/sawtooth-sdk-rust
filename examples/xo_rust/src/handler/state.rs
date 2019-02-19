@@ -31,12 +31,12 @@ pub fn get_xo_prefix() -> String {
 }
 
 pub struct XoState<'a> {
-    context: &'a mut TransactionContext,
+    context: &'a mut dyn TransactionContext,
     address_map: HashMap<String, Option<String>>,
 }
 
 impl<'a> XoState<'a> {
-    pub fn new(context: &'a mut TransactionContext) -> XoState {
+    pub fn new(context: &'a mut dyn TransactionContext) -> XoState {
         XoState {
             context,
             address_map: HashMap::new(),
@@ -96,7 +96,7 @@ impl<'a> XoState<'a> {
         if self.address_map.contains_key(&address) {
             self.address_map.insert(address.clone(), None);
         }
-        self.context.delete_state(vec![address])?;
+        self.context.delete_state(&[address])?;
         Ok(())
     }
 
@@ -110,7 +110,7 @@ impl<'a> XoState<'a> {
                 })?,
                 None => HashMap::new(),
             },
-            Entry::Vacant(entry) => match self.context.get_state(vec![address])? {
+            Entry::Vacant(entry) => match self.context.get_state_entry(&address)? {
                 Some(state_bytes) => {
                     let state_string = from_utf8(&state_bytes).map_err(|e| {
                         ApplyError::InvalidTransaction(format!(
