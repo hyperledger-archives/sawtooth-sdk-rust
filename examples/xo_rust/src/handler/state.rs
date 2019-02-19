@@ -19,7 +19,7 @@ use crypto::digest::Digest;
 use crypto::sha2::Sha512;
 use handler::game::Game;
 use sawtooth_sdk::processor::handler::ApplyError;
-use sawtooth_sdk::processor::handler::TransactionContext;
+use sawtooth_sdk::processor::handler::Context;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::str::from_utf8;
@@ -31,12 +31,12 @@ pub fn get_xo_prefix() -> String {
 }
 
 pub struct XoState<'a> {
-    context: &'a mut TransactionContext,
+    context: &'a mut dyn Context,
     address_map: HashMap<String, Option<String>>,
 }
 
 impl<'a> XoState<'a> {
-    pub fn new(context: &'a mut TransactionContext) -> XoState {
+    pub fn new(context: &'a mut dyn Context) -> XoState {
         XoState {
             context,
             address_map: HashMap::new(),
@@ -96,7 +96,7 @@ impl<'a> XoState<'a> {
         if self.address_map.contains_key(&address) {
             self.address_map.insert(address.clone(), None);
         }
-        self.context.delete_state(vec![address])?;
+        self.context.delete_state(&[address])?;
         Ok(())
     }
 
@@ -110,8 +110,8 @@ impl<'a> XoState<'a> {
                 })?,
                 None => HashMap::new(),
             },
-            Entry::Vacant(entry) => match self.context.get_state(vec![address])? {
-                Some(state_bytes) => {
+            Entry::Vacant(entry) => match self.context.get_state(&[address])?.get(0) {
+                Some((_, state_bytes)) => {
                     let state_string = from_utf8(&state_bytes).map_err(|e| {
                         ApplyError::InvalidTransaction(format!(
                             "Invalid serialization of game state: {}",

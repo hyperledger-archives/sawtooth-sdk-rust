@@ -23,7 +23,7 @@ use self::game::Game;
 use self::payload::XoPayload;
 use self::state::{get_xo_prefix, XoState};
 use sawtooth_sdk::messages::processor::TpProcessRequest;
-use sawtooth_sdk::processor::handler::{ApplyError, TransactionContext, TransactionHandler};
+use sawtooth_sdk::processor::handler::{ApplyError, Context, TransactionHandler};
 
 pub struct XoTransactionHandler {
     family_name: String,
@@ -57,7 +57,7 @@ impl TransactionHandler for XoTransactionHandler {
     fn apply(
         &self,
         request: &TpProcessRequest,
-        context: &mut TransactionContext,
+        context: &mut dyn Context,
     ) -> Result<(), ApplyError> {
         let header = &request.header;
         let signer = match &header.as_ref() {

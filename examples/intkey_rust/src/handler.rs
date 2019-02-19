@@ -32,7 +32,7 @@ use cbor::value::Value;
 
 use sawtooth_sdk::messages::processor::TpProcessRequest;
 use sawtooth_sdk::processor::handler::ApplyError;
-use sawtooth_sdk::processor::handler::TransactionContext;
+use sawtooth_sdk::processor::handler::Context;
 use sawtooth_sdk::processor::handler::TransactionHandler;
 
 const MAX_VALUE: u32 = 4_294_967_295;
@@ -160,12 +160,12 @@ impl IntkeyPayload {
 }
 
 pub struct IntkeyState<'a> {
-    context: &'a mut TransactionContext,
+    context: &'a mut dyn Context,
     get_cache: HashMap<String, BTreeMap<Key, Value>>,
 }
 
 impl<'a> IntkeyState<'a> {
-    pub fn new(context: &'a mut TransactionContext) -> IntkeyState {
+    pub fn new(context: &'a mut dyn Context) -> IntkeyState {
         IntkeyState {
             context,
             get_cache: HashMap::new(),
@@ -180,9 +180,9 @@ impl<'a> IntkeyState<'a> {
 
     pub fn get(&mut self, name: &str) -> Result<Option<u32>, ApplyError> {
         let address = IntkeyState::calculate_address(name);
-        let d = self.context.get_state(vec![address.clone()])?;
-        match d {
-            Some(packed) => {
+        let d = self.context.get_state(&[address.clone()])?;
+        match d.get(0) {
+            Some((_, packed)) => {
                 let input = Cursor::new(packed);
                 let mut decoder = cbor::GenericDecoder::new(cbor::Config::default(), input);
                 let map_value = decoder
@@ -208,7 +208,7 @@ impl<'a> IntkeyState<'a> {
                     },
                     None => Ok(None),
                 };
-                self.get_cache.insert(address.clone(), map.clone());
+                self.get_cache.insert(address, map.clone());
                 status
             }
             None => Ok(None),
@@ -272,7 +272,7 @@ impl TransactionHandler for IntkeyTransactionHandler {
     fn apply(
         &self,
         request: &TpProcessRequest,
-        context: &mut TransactionContext,
+        context: &mut dyn Context,
     ) -> Result<(), ApplyError> {
         let payload = IntkeyPayload::new(request.get_payload());
         let payload = match payload {
