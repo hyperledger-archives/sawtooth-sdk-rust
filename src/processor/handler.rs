@@ -163,6 +163,23 @@ impl From<ReceiveError> for ContextError {
     }
 }
 
+pub trait Context {
+    fn get_state(&self, addresses: &[String]) -> Result<Vec<(String, Vec<u8>)>, ContextError>;
+
+    fn set_state(&self, entries: HashMap<String, Vec<u8>>) -> Result<(), ContextError>;
+
+    fn delete_state(&self, addresses: &[String]) -> Result<Option<Vec<String>>, ContextError>;
+
+    fn add_receipt_data(&self, data: &[u8]) -> Result<(), ContextError>;
+
+    fn add_event(
+        &self,
+        event_type: String,
+        attributes: Vec<(String, String)>,
+        data: &[u8],
+    ) -> Result<(), ContextError>;
+}
+
 #[derive(Clone)]
 pub struct TransactionContext {
     context_id: String,
