@@ -31,6 +31,7 @@ use std::time::Duration;
 use self::rand::Rng;
 
 pub mod handler;
+mod zmq_context;
 
 use messages::network::PingResponse;
 use messages::processor::TpProcessRequest;
@@ -49,8 +50,8 @@ use protobuf::Message as M;
 use protobuf::RepeatedField;
 
 use self::handler::ApplyError;
-use self::handler::TransactionContext;
 use self::handler::TransactionHandler;
+use self::zmq_context::ZmqTransactionContext;
 
 /// Generates a random correlation id for use in Message
 fn generate_correlation_id() -> String {
@@ -240,7 +241,7 @@ impl<'a> TransactionProcessor<'a> {
                                         }
                                     };
 
-                                let mut context = TransactionContext::new(
+                                let mut context = ZmqTransactionContext::new(
                                     request.get_context_id(),
                                     sender.clone(),
                                 );
