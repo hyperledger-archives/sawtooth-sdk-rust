@@ -32,7 +32,7 @@ pem = ["openssl"]
 
 [dependencies]
 hex = "0.3"
-protobuf="2.0"
+protobuf="2"
 secp256k1 = "0.7.1"
 rand = "0.4.2"
 rust-crypto = "0.2.36"
