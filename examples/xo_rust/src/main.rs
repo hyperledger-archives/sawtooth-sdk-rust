@@ -17,21 +17,18 @@
 
 #[macro_use]
 extern crate clap;
-extern crate crypto;
 #[macro_use]
 extern crate log;
-extern crate log4rs;
-extern crate sawtooth_sdk;
 
-mod handler;
+use std::process;
 
-use handler::XoTransactionHandler;
 use log::LevelFilter;
 use log4rs::append::console::ConsoleAppender;
 use log4rs::config::{Appender, Config, Root};
 use log4rs::encode::pattern::PatternEncoder;
+
 use sawtooth_sdk::processor::TransactionProcessor;
-use std::process;
+use sawtooth_xo::handler::XoTransactionHandler;
 
 fn main() {
     let matches = clap_app!(xo =>
