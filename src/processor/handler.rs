@@ -21,26 +21,14 @@ extern crate protobuf;
 extern crate rand;
 extern crate zmq;
 
-use protobuf::Message as M;
-use protobuf::RepeatedField;
-
 use std;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::error::Error as StdError;
 
-use messages::events::Event;
-use messages::events::Event_Attribute;
 use messages::processor::TpProcessRequest;
-use messages::state_context::*;
-use messages::validator::Message_MessageType;
-
-use messaging::stream::MessageSender;
 use messaging::stream::ReceiveError;
 use messaging::stream::SendError;
-use messaging::zmq_stream::ZmqMessageSender;
-
-use super::generate_correlation_id;
 
 #[derive(Debug)]
 pub enum ApplyError {
@@ -163,122 +151,54 @@ impl From<ReceiveError> for ContextError {
     }
 }
 
-#[derive(Clone)]
-pub struct TransactionContext {
-    context_id: String,
-    sender: ZmqMessageSender,
-}
-
-impl TransactionContext {
-    /// Context provides an interface for getting, setting, and deleting
-    /// validator state. All validator interactions by a handler should be
-    /// through a Context instance.
+pub trait TransactionContext {
+    #[deprecated(
+        since = "0.3.0",
+        note = "please use `get_state_entry` or `get_state_entries` instead"
+    )]
+    /// get_state queries the validator state for data at each of the
+    /// addresses in the given list. The addresses that have been set
+    /// are returned. get_state is deprecated, please use get_state_entry or get_state_entries
+    /// instead
     ///
     /// # Arguments
     ///
-    /// * `sender` - for client grpc communication
-    /// * `context_id` - the context_id passed in from the validator
-    pub fn new(context_id: &str, sender: ZmqMessageSender) -> TransactionContext {
-        TransactionContext {
-            context_id: String::from(context_id),
-            sender,
-        }
+    /// * `addresses` - the addresses to fetch
+    fn get_state(&self, addresses: &[String]) -> Result<Vec<(String, Vec<u8>)>, ContextError> {
+        self.get_state_entries(addresses)
     }
 
-    /// get_state queries the validator state for data at each of the
+    /// get_state_entry queries the validator state for data at the
+    /// address given. If the  address is set, the data is returned.
+    ///
+    /// # Arguments
+    ///
+    /// * `address` - the address to fetch
+    fn get_state_entry(&self, addresses: &str) -> Result<Option<Vec<u8>>, ContextError>;
+
+    /// get_state_entries queries the validator state for data at each of the
     /// addresses in the given list. The addresses that have been set
     /// are returned.
     ///
     /// # Arguments
     ///
     /// * `addresses` - the addresses to fetch
-    #[allow(clippy::needless_pass_by_value)]
-    pub fn get_state(&mut self, addresses: Vec<String>) -> Result<Option<Vec<u8>>, ContextError> {
-        let mut request = TpStateGetRequest::new();
-        request.set_context_id(self.context_id.clone());
-        request.set_addresses(RepeatedField::from_vec(addresses.to_vec()));
-        let serialized = request.write_to_bytes()?;
-        let x: &[u8] = &serialized;
+    fn get_state_entries(
+        &self,
+        addresses: &[String],
+    ) -> Result<Vec<(String, Vec<u8>)>, ContextError>;
 
-        let mut future = self.sender.send(
-            Message_MessageType::TP_STATE_GET_REQUEST,
-            &generate_correlation_id(),
-            x,
-        )?;
-
-        let response: TpStateGetResponse = protobuf::parse_from_bytes(future.get()?.get_content())?;
-        match response.get_status() {
-            TpStateGetResponse_Status::OK => {
-                let entry = match response.get_entries().first() {
-                    Some(x) => x,
-                    None => {
-                        return Err(ContextError::ResponseAttributeError(String::from(
-                            "TpStateGetResponse is missing entries.",
-                        )));
-                    }
-                };
-                match entry.get_data().len() {
-                    0 => Ok(None),
-                    _ => Ok(Some(Vec::from(entry.get_data()))),
-                }
-            }
-            TpStateGetResponse_Status::AUTHORIZATION_ERROR => {
-                Err(ContextError::AuthorizationError(format!(
-                    "Tried to get unauthorized address: {:?}",
-                    addresses
-                )))
-            }
-            TpStateGetResponse_Status::STATUS_UNSET => Err(ContextError::ResponseAttributeError(
-                String::from("Status was not set for TpStateGetResponse"),
-            )),
-        }
-    }
-
+    #[deprecated(
+        since = "0.3.0",
+        note = "please use `set_state_entry` or `set_state_entries` instead"
+    )]
     /// set_state requests that each address in the provided map be
     /// set in validator state to its corresponding value.
     ///
     /// # Arguments
     ///
-    /// * `address` - address of where to store the data
-    /// * `paylaod` - payload is the data to store at the address
-    #[allow(clippy::needless_pass_by_value)]
-    pub fn set_state(&mut self, entries: HashMap<String, Vec<u8>>) -> Result<(), ContextError> {
-        let state_entries: Vec<TpStateEntry> = entries
-            .iter()
-            .map(|(address, payload)| {
-                let mut entry = TpStateEntry::new();
-                entry.set_address(address.to_string());
-                entry.set_data(payload.to_vec());
-                entry
-            })
-            .collect();
-
-        let mut request = TpStateSetRequest::new();
-        request.set_context_id(self.context_id.clone());
-        request.set_entries(RepeatedField::from_vec(state_entries.to_vec()));
-        let serialized = request.write_to_bytes()?;
-        let x: &[u8] = &serialized;
-
-        let mut future = self.sender.send(
-            Message_MessageType::TP_STATE_SET_REQUEST,
-            &generate_correlation_id(),
-            x,
-        )?;
-
-        let response: TpStateSetResponse = protobuf::parse_from_bytes(future.get()?.get_content())?;
-        match response.get_status() {
-            TpStateSetResponse_Status::OK => Ok(()),
-            TpStateSetResponse_Status::AUTHORIZATION_ERROR => {
-                Err(ContextError::AuthorizationError(format!(
-                    "Tried to set unauthorized address: {:?}",
-                    state_entries
-                )))
-            }
-            TpStateSetResponse_Status::STATUS_UNSET => Err(ContextError::ResponseAttributeError(
-                String::from("Status was not set for TpStateSetResponse"),
-            )),
-        }
-    }
+    /// * `entries` - entries are a hashmap where the key is and address and value is the data
+    fn set_state(&self, entries: HashMap<String, Vec<u8>>) -> Result<(), ContextError>;
 
     /// delete_state requests that each of the provided addresses be unset
     /// in validator state. A list of successfully deleted addresses
@@ -287,75 +207,14 @@ impl TransactionContext {
     /// # Arguments
     ///
     /// * `addresses` - the addresses to fetch
-    #[allow(clippy::needless_pass_by_value)]
-    pub fn delete_state(
-        &mut self,
-        addresses: Vec<String>,
-    ) -> Result<Option<Vec<String>>, ContextError> {
-        let mut request = TpStateDeleteRequest::new();
-        request.set_context_id(self.context_id.clone());
-        request.set_addresses(RepeatedField::from_vec(addresses.clone()));
-
-        let serialized = request.write_to_bytes()?;
-        let x: &[u8] = &serialized;
-
-        let mut future = self.sender.send(
-            Message_MessageType::TP_STATE_DELETE_REQUEST,
-            &generate_correlation_id(),
-            x,
-        )?;
-
-        let response: TpStateDeleteResponse =
-            protobuf::parse_from_bytes(future.get()?.get_content())?;
-        match response.get_status() {
-            TpStateDeleteResponse_Status::OK => Ok(Some(Vec::from(response.get_addresses()))),
-            TpStateDeleteResponse_Status::AUTHORIZATION_ERROR => {
-                Err(ContextError::AuthorizationError(format!(
-                    "Tried to delete unauthorized address: {:?}",
-                    addresses
-                )))
-            }
-            TpStateDeleteResponse_Status::STATUS_UNSET => {
-                Err(ContextError::ResponseAttributeError(String::from(
-                    "Status was not set for TpStateDeleteResponse",
-                )))
-            }
-        }
-    }
+    fn delete_state(&self, addresses: &[String]) -> Result<Option<Vec<String>>, ContextError>;
 
     /// add_receipt_data adds a blob to the execution result for this transaction
     ///
     /// # Arguments
     ///
     /// * `data` - the data to add
-    pub fn add_receipt_data(&mut self, data: &[u8]) -> Result<(), ContextError> {
-        let mut request = TpReceiptAddDataRequest::new();
-        request.set_context_id(self.context_id.clone());
-        request.set_data(Vec::from(data));
-
-        let serialized = request.write_to_bytes()?;
-        let x: &[u8] = &serialized;
-
-        let mut future = self.sender.send(
-            Message_MessageType::TP_RECEIPT_ADD_DATA_REQUEST,
-            &generate_correlation_id(),
-            x,
-        )?;
-
-        let response: TpReceiptAddDataResponse =
-            protobuf::parse_from_bytes(future.get()?.get_content())?;
-        match response.get_status() {
-            TpReceiptAddDataResponse_Status::OK => Ok(()),
-            TpReceiptAddDataResponse_Status::ERROR => Err(ContextError::TransactionReceiptError(
-                format!("Failed to add receipt data {:?}", data),
-            )),
-            TpReceiptAddDataResponse_Status::STATUS_UNSET => {
-                Err(ContextError::ResponseAttributeError(String::from(
-                    "Status was not set for TpReceiptAddDataResponse",
-                )))
-            }
-        }
-    }
+    fn add_receipt_data(&self, data: &[u8]) -> Result<(), ContextError>;
 
     /// add_event adds a new event to the execution result for this transaction.
     ///
@@ -367,49 +226,12 @@ impl TransactionContext {
     ///          validator. Attributes can be used by subscribers to filter the type of events
     ///          they receive.
     /// * `data` - Additional information about the event that is opaque to the validator.
-    pub fn add_event(
-        &mut self,
+    fn add_event(
+        &self,
         event_type: String,
         attributes: Vec<(String, String)>,
         data: &[u8],
-    ) -> Result<(), ContextError> {
-        let mut event = Event::new();
-        event.set_event_type(event_type);
-
-        let mut attributes_vec = Vec::new();
-        for (key, value) in attributes {
-            let mut attribute = Event_Attribute::new();
-            attribute.set_key(key);
-            attribute.set_value(value);
-            attributes_vec.push(attribute);
-        }
-        event.set_attributes(RepeatedField::from_vec(attributes_vec));
-        event.set_data(Vec::from(data));
-
-        let mut request = TpEventAddRequest::new();
-        request.set_context_id(self.context_id.clone());
-        request.set_event(event.clone());
-
-        let serialized = request.write_to_bytes()?;
-        let x: &[u8] = &serialized;
-
-        let mut future = self.sender.send(
-            Message_MessageType::TP_EVENT_ADD_REQUEST,
-            &generate_correlation_id(),
-            x,
-        )?;
-
-        let response: TpEventAddResponse = protobuf::parse_from_bytes(future.get()?.get_content())?;
-        match response.get_status() {
-            TpEventAddResponse_Status::OK => Ok(()),
-            TpEventAddResponse_Status::ERROR => Err(ContextError::TransactionReceiptError(
-                format!("Failed to add event {:?}", event),
-            )),
-            TpEventAddResponse_Status::STATUS_UNSET => Err(ContextError::ResponseAttributeError(
-                String::from("Status was not set for TpEventAddRespons"),
-            )),
-        }
-    }
+    ) -> Result<(), ContextError>;
 }
 
 pub trait TransactionHandler {
@@ -437,6 +259,6 @@ pub trait TransactionHandler {
     fn apply(
         &self,
         request: &TpProcessRequest,
-        context: &mut TransactionContext,
+        context: &mut dyn TransactionContext,
     ) -> Result<(), ApplyError>;
 }
