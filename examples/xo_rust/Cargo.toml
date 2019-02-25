@@ -14,9 +14,18 @@
 # -----------------------------------------------------------------------------
 
 [package]
-name = "xo_rust"
+name = "sawtooth-xo"
 version = "0.8.0"
 authors = ["Bitwise IO, Inc."]
+edition = "2018"
+
+[lib]
+name = "sawtooth_xo"
+path = "src/lib.rs"
+
+[[bin]]
+name = "xo_rust"
+path = "src/main.rs"
 
 [dependencies]
 sawtooth-sdk = { path = "../.." }
