@@ -175,7 +175,7 @@ pub trait TransactionContext {
     /// # Arguments
     ///
     /// * `address` - the address to fetch
-    fn get_state_entry(&self, addresses: &str) -> Result<Option<Vec<u8>>, ContextError>;
+    fn get_state_entry(&self, address: &str) -> Result<Option<Vec<u8>>, ContextError>;
 
     /// get_state_entries queries the validator state for data at each of the
     /// addresses in the given list. The addresses that have been set
