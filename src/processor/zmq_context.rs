@@ -16,8 +16,6 @@
  * -----------------------------------------------------------------------------
  */
 
-use std::collections::HashMap;
-
 use protobuf::Message as M;
 use protobuf::RepeatedField;
 
@@ -152,14 +150,52 @@ impl TransactionContext for ZmqTransactionContext {
     /// # Arguments
     ///
     /// * `address` - address of where to store the data
-    /// * `payload` - payload is the data to store at the address
-    fn set_state(&self, entries: HashMap<String, Vec<u8>>) -> Result<(), ContextError> {
+    /// * `data` - data is the data to store at the address
+    fn set_state_entry(&self, address: String, data: Vec<u8>) -> Result<(), ContextError> {
+        let mut entry = TpStateEntry::new();
+        entry.set_address(address.to_string());
+        entry.set_data(data);
+
+        let mut request = TpStateSetRequest::new();
+        request.set_context_id(self.context_id.clone());
+        request.set_entries(RepeatedField::from_vec(vec![entry]));
+        let serialized = request.write_to_bytes()?;
+        let x: &[u8] = &serialized;
+
+        let mut future = self.sender.send(
+            Message_MessageType::TP_STATE_SET_REQUEST,
+            &generate_correlation_id(),
+            x,
+        )?;
+
+        let response: TpStateSetResponse = protobuf::parse_from_bytes(future.get()?.get_content())?;
+        match response.get_status() {
+            TpStateSetResponse_Status::OK => Ok(()),
+            TpStateSetResponse_Status::AUTHORIZATION_ERROR => {
+                Err(ContextError::AuthorizationError(format!(
+                    "Tried to set unauthorized address: {:?}",
+                    address
+                )))
+            }
+            TpStateSetResponse_Status::STATUS_UNSET => Err(ContextError::ResponseAttributeError(
+                String::from("Status was not set for TpStateSetResponse"),
+            )),
+        }
+    }
+
+    /// set_state requests that each address in the provided map be
+    /// set in validator state to its corresponding value.
+    ///
+    /// # Arguments
+    ///
+    /// * `entries` - entries are a hashmap where the key is an address and value is the data
+    fn set_state_entries(&self, entries: Vec<(String, Vec<u8>)>) -> Result<(), ContextError> {
         let state_entries: Vec<TpStateEntry> = entries
             .into_iter()
             .map(|(address, payload)| {
                 let mut entry = TpStateEntry::new();
-                entry.set_address(address.to_string());
-                entry.set_data(payload.to_vec());
+                entry.set_address(address);
+                entry.set_data(payload);
                 entry
             })
             .collect();
@@ -181,7 +217,7 @@ impl TransactionContext for ZmqTransactionContext {
             TpStateSetResponse_Status::OK => Ok(()),
             TpStateSetResponse_Status::AUTHORIZATION_ERROR => {
                 Err(ContextError::AuthorizationError(format!(
-                    "Tried to set unauthorized address: {:?}",
+                    "Tried to set unauthorized addresses: {:?}",
                     state_entries
                 )))
             }
@@ -191,14 +227,59 @@ impl TransactionContext for ZmqTransactionContext {
         }
     }
 
-    /// delete_state requests that each of the provided addresses be unset
+    /// delete_state_entry requests that the provided address be unset
     /// in validator state. A list of successfully deleted addresses
-    ///  is returned.
+    /// is returned.
     ///
     /// # Arguments
     ///
-    /// * `addresses` - the addresses to fetch
-    fn delete_state(&self, addresses: &[String]) -> Result<Option<Vec<String>>, ContextError> {
+    /// * `address` - the address to delete
+    fn delete_state_entry(&self, address: &str) -> Result<Option<String>, ContextError> {
+        let mut request = TpStateDeleteRequest::new();
+        request.set_context_id(self.context_id.clone());
+        request.set_addresses(RepeatedField::from_vec(vec![address.to_string()]));
+
+        let serialized = request.write_to_bytes()?;
+        let x: &[u8] = &serialized;
+
+        let mut future = self.sender.send(
+            Message_MessageType::TP_STATE_DELETE_REQUEST,
+            &generate_correlation_id(),
+            x,
+        )?;
+
+        let response: TpStateDeleteResponse =
+            protobuf::parse_from_bytes(future.get()?.get_content())?;
+        match response.get_status() {
+            TpStateDeleteResponse_Status::OK => {
+                if let Some(address) = response.get_addresses().first() {
+                    Ok(Some(address.to_string()))
+                } else {
+                    Ok(None)
+                }
+            }
+            TpStateDeleteResponse_Status::AUTHORIZATION_ERROR => {
+                Err(ContextError::AuthorizationError(format!(
+                    "Tried to delete unauthorized address: {:?}",
+                    address
+                )))
+            }
+            TpStateDeleteResponse_Status::STATUS_UNSET => {
+                Err(ContextError::ResponseAttributeError(String::from(
+                    "Status was not set for TpStateDeleteResponse",
+                )))
+            }
+        }
+    }
+
+    /// delete_state_entries requests that each of the provided addresses be unset
+    /// in validator state. A list of successfully deleted addresses
+    /// is returned.
+    ///
+    /// # Arguments
+    ///
+    /// * `addresses` - the addresses to delete
+    fn delete_state_entries(&self, addresses: &[String]) -> Result<Vec<String>, ContextError> {
         let mut request = TpStateDeleteRequest::new();
         request.set_context_id(self.context_id.clone());
         request.set_addresses(RepeatedField::from_slice(addresses));
@@ -215,10 +296,10 @@ impl TransactionContext for ZmqTransactionContext {
         let response: TpStateDeleteResponse =
             protobuf::parse_from_bytes(future.get()?.get_content())?;
         match response.get_status() {
-            TpStateDeleteResponse_Status::OK => Ok(Some(Vec::from(response.get_addresses()))),
+            TpStateDeleteResponse_Status::OK => Ok(Vec::from(response.get_addresses())),
             TpStateDeleteResponse_Status::AUTHORIZATION_ERROR => {
                 Err(ContextError::AuthorizationError(format!(
-                    "Tried to delete unauthorized address: {:?}",
+                    "Tried to delete unauthorized addresses: {:?}",
                     addresses
                 )))
             }

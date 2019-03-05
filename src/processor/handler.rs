@@ -1,5 +1,6 @@
 /*
  * Copyright 2017 Bitwise IO, Inc.
+ * Copyright 2019 Cargill Incorporated
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -174,7 +175,7 @@ pub trait TransactionContext {
     /// # Arguments
     ///
     /// * `address` - the address to fetch
-    fn get_state_entry(&self, addresses: &str) -> Result<Option<Vec<u8>>, ContextError>;
+    fn get_state_entry(&self, address: &str) -> Result<Option<Vec<u8>>, ContextError>;
 
     /// get_state_entries queries the validator state for data at each of the
     /// addresses in the given list. The addresses that have been set
@@ -193,21 +194,66 @@ pub trait TransactionContext {
         note = "please use `set_state_entry` or `set_state_entries` instead"
     )]
     /// set_state requests that each address in the provided map be
+    /// set in validator state to its corresponding value. set_state is deprecated, please use
+    /// set_state_entry to set_state_entries instead
+    ///
+    /// # Arguments
+    ///
+    /// * `entries` - entries are a hashmap where the key is an address and value is the data
+    fn set_state(&self, entries: HashMap<String, Vec<u8>>) -> Result<(), ContextError> {
+        let state_entries: Vec<(String, Vec<u8>)> = entries.into_iter().collect();
+        self.set_state_entries(state_entries)
+    }
+
+    /// set_state_entry requests that the provided address is set in the validator state to its
+    /// corresponding value.
+    ///
+    /// # Arguments
+    ///
+    /// * `address` - address of where to store the data
+    /// * `data` - payload is the data to store at the address
+    fn set_state_entry(&self, address: String, data: Vec<u8>) -> Result<(), ContextError>;
+
+    /// set_state_entries requests that each address in the provided map be
     /// set in validator state to its corresponding value.
     ///
     /// # Arguments
     ///
-    /// * `entries` - entries are a hashmap where the key is and address and value is the data
-    fn set_state(&self, entries: HashMap<String, Vec<u8>>) -> Result<(), ContextError>;
+    /// * `entries` - entries are a hashmap where the key is an address and value is the data
+    fn set_state_entries(&self, entries: Vec<(String, Vec<u8>)>) -> Result<(), ContextError>;
 
     /// delete_state requests that each of the provided addresses be unset
-    /// in validator state. A list of successfully deleted addresses
-    ///  is returned.
+    /// in validator state. A list of successfully deleted addresses is returned.
+    /// delete_state is deprecated, please use delete_state_entry to delete_state_entries instead
     ///
     /// # Arguments
     ///
-    /// * `addresses` - the addresses to fetch
-    fn delete_state(&self, addresses: &[String]) -> Result<Option<Vec<String>>, ContextError>;
+    /// * `addresses` - the addresses to delete
+    #[deprecated(
+        since = "0.3.0",
+        note = "please use `delete_state_entry` or `delete_state_entries` instead"
+    )]
+    fn delete_state(&self, addresses: &[String]) -> Result<Vec<String>, ContextError> {
+        self.delete_state_entries(addresses)
+    }
+
+    /// delete_state_entry requests that the provided address be unset
+    /// in validator state. A list of successfully deleted addresses
+    /// is returned.
+    ///
+    /// # Arguments
+    ///
+    /// * `address` - the address to delete
+    fn delete_state_entry(&self, address: &str) -> Result<Option<String>, ContextError>;
+
+    /// delete_state_entries requests that each of the provided addresses be unset
+    /// in validator state. A list of successfully deleted addresses
+    /// is returned.
+    ///
+    /// # Arguments
+    ///
+    /// * `addresses` - the addresses to delete
+    fn delete_state_entries(&self, addresses: &[String]) -> Result<Vec<String>, ContextError>;
 
     /// add_receipt_data adds a blob to the execution result for this transaction
     ///

@@ -230,10 +230,8 @@ impl<'a> IntkeyState<'a> {
             .map_err(|err| ApplyError::InternalError(format!("{}", err)))?;
 
         let packed = e.into_inner().into_writer().into_inner();
-        let mut sets = HashMap::new();
-        sets.insert(IntkeyState::calculate_address(name), packed);
         self.context
-            .set_state(sets)
+            .set_state_entry(IntkeyState::calculate_address(name), packed)
             .map_err(|err| ApplyError::InternalError(format!("{}", err)))?;
 
         Ok(())

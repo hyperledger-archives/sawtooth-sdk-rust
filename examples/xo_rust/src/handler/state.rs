@@ -86,9 +86,8 @@ impl<'a> XoState<'a> {
         let state_string = Game::serialize_games(games);
         self.address_map
             .insert(address.clone(), Some(state_string.clone()));
-        let mut sets = HashMap::new();
-        sets.insert(address, state_string.into_bytes());
-        self.context.set_state(sets)?;
+        self.context
+            .set_state_entry(address, state_string.into_bytes())?;
         Ok(())
     }
 
@@ -97,7 +96,7 @@ impl<'a> XoState<'a> {
         if self.address_map.contains_key(&address) {
             self.address_map.insert(address.clone(), None);
         }
-        self.context.delete_state(&[address])?;
+        self.context.delete_state_entry(&address)?;
         Ok(())
     }
 
