@@ -16,8 +16,6 @@
  * -----------------------------------------------------------------------------
  */
 
-use std::collections::HashMap;
-
 use protobuf::Message as M;
 use protobuf::RepeatedField;
 
@@ -191,13 +189,13 @@ impl TransactionContext for ZmqTransactionContext {
     /// # Arguments
     ///
     /// * `entries` - entries are a hashmap where the key is an address and value is the data
-    fn set_state_entries(&self, entries: HashMap<String, Vec<u8>>) -> Result<(), ContextError> {
+    fn set_state_entries(&self, entries: Vec<(String, Vec<u8>)>) -> Result<(), ContextError> {
         let state_entries: Vec<TpStateEntry> = entries
             .into_iter()
             .map(|(address, payload)| {
                 let mut entry = TpStateEntry::new();
-                entry.set_address(address.to_string());
-                entry.set_data(payload.to_vec());
+                entry.set_address(address);
+                entry.set_data(payload);
                 entry
             })
             .collect();

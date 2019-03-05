@@ -201,7 +201,8 @@ pub trait TransactionContext {
     ///
     /// * `entries` - entries are a hashmap where the key is an address and value is the data
     fn set_state(&self, entries: HashMap<String, Vec<u8>>) -> Result<(), ContextError> {
-        self.set_state_entries(entries)
+        let state_entries: Vec<(String, Vec<u8>)> = entries.into_iter().collect();
+        self.set_state_entries(state_entries)
     }
 
     /// set_state_entry requests that the provided address is set in the validator state to its
@@ -219,7 +220,7 @@ pub trait TransactionContext {
     /// # Arguments
     ///
     /// * `entries` - entries are a hashmap where the key is an address and value is the data
-    fn set_state_entries(&self, entries: HashMap<String, Vec<u8>>) -> Result<(), ContextError>;
+    fn set_state_entries(&self, entries: Vec<(String, Vec<u8>)>) -> Result<(), ContextError>;
 
     /// delete_state requests that each of the provided addresses be unset
     /// in validator state. A list of successfully deleted addresses is returned.
