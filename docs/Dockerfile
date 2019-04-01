@@ -39,4 +39,5 @@ CMD if [ -d "target/doc" ]; then rm -rf target/doc; fi \
  && cargo doc --no-deps --lib \
  && rm -f target/doc/.lock \
  && if [ -d "docs/build" ]; then rm -rf docs/build; fi \
- && cp -r target/doc/ docs/build/
+ && mkdir -p docs/build/html/ \
+ && cp -r target/doc/* docs/build/html
