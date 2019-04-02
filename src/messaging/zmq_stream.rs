@@ -292,10 +292,14 @@ impl SendReceiveStream {
                 }
                 Ok(SocketCommand::Shutdown) => {
                     trace!("Shutdown Signal Received");
+                    self.inbound_router
+                        .route(Err(ReceiveError::DisconnectedError));
                     break;
                 }
                 Err(RecvTimeoutError::Disconnected) => {
                     debug!("Disconnected outbound channel");
+                    self.inbound_router
+                        .route(Err(ReceiveError::DisconnectedError));
                     break;
                 }
                 _ => continue,
