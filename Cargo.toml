@@ -36,7 +36,7 @@ protobuf="2"
 secp256k1 = "0.7.1"
 rand = "0.4.2"
 rust-crypto = "0.2.36"
-sawtooth-zmq = "0.8.2-dev5"
+zmq = "0.9"
 uuid = { version = "0.5", features = ["v4"] }
 log = "0.3"
 libc = "0.2"
