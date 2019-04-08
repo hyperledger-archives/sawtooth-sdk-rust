@@ -15,33 +15,48 @@
 // limitations under the License.
 // ------------------------------------------------------------------------------
 
-// Discard old builds after 31 days
-properties([[$class: 'BuildDiscarderProperty', strategy:
-        [$class: 'LogRotator', artifactDaysToKeepStr: '',
-        artifactNumToKeepStr: '', daysToKeepStr: '31', numToKeepStr: '']]]);
+pipeline {
+    agent {
+        node {
+            label 'master'
+            customWorkspace "workspace/${env.BUILD_TAG}"
+        }
+    }
 
-node ('master') {
-    timestamps {
-        // Create a unique workspace so Jenkins doesn't reuse an existing one
-        ws("workspace/${env.BUILD_TAG}") {
-            stage("Clone Repo") {
-                checkout scm
+    triggers {
+        cron(env.BRANCH_NAME == 'master' ? 'H 3 * * *' : '')
+    }
+
+    options {
+        timestamps()
+        buildDiscarder(logRotator(daysToKeepStr: '31'))
+    }
+
+    environment {
+        ISOLATION_ID = sh(returnStdout: true, script: 'printf $BUILD_TAG | sha256sum | cut -c1-64').trim()
+        COMPOSE_PROJECT_NAME = sh(returnStdout: true, script: 'printf $BUILD_TAG | sha256sum | cut -c1-64').trim()
+    }
+
+    stages {
+        stage('Check Whitelist') {
+            steps {
+                readTrusted 'bin/whitelist'
+                sh './bin/whitelist "$CHANGE_AUTHOR" /etc/jenkins-authorized-builders'
             }
-
-            if (!(env.BRANCH_NAME == 'master' && env.JOB_BASE_NAME == 'master')) {
-                stage("Check Whitelist") {
-                    readTrusted 'bin/whitelist'
-                    sh './bin/whitelist "$CHANGE_AUTHOR" /etc/jenkins-authorized-builders'
+            when {
+                not {
+                    branch 'master'
                 }
             }
+        }
 
-            stage("Check for Signed-Off Commits") {
+        stage('Check for Signed-Off Commits') {
+            steps {
                 sh '''#!/bin/bash -l
                     if [ -v CHANGE_URL ] ;
                     then
                         temp_url="$(echo $CHANGE_URL |sed s#github.com/#api.github.com/repos/#)/commits"
                         pull_url="$(echo $temp_url |sed s#pull#pulls#)"
-
                         IFS=$'\n'
                         for m in $(curl -s "$pull_url" | grep "message") ; do
                             if echo "$m" | grep -qi signed-off-by:
@@ -57,38 +72,55 @@ node ('master') {
                     fi
                 '''
             }
+        }
 
-            // Set the ISOLATION_ID environment variable for the whole pipeline
-            env.ISOLATION_ID = sh(returnStdout: true, script: 'printf $BUILD_TAG | sha256sum | cut -c1-64').trim()
-            env.COMPOSE_PROJECT_NAME = sh(returnStdout: true, script: 'printf $BUILD_TAG | sha256sum | cut -c1-64').trim()
+        stage('Fetch Tags') {
+            steps {
+                sh 'git fetch --tag'
+            }
+        }
 
-            // Use a docker container to build and protogen, so that the Jenkins
-            // environment doesn't need all the dependencies.
-
-            stage("Build Lint Requirements") {
+        stage('Build Lint Requirements') {
+            steps{
                 sh 'docker-compose -f docker/compose/run-lint.yaml build'
                 sh 'docker-compose -f docker/compose/sawtooth-build.yaml up'
                 sh 'docker-compose -f docker/compose/sawtooth-build.yaml down'
             }
+        }
 
-            stage("Run Lint") {
+        stage('Run Lint') {
+            steps {
                 sh 'docker-compose -f docker/compose/run-lint.yaml up --abort-on-container-exit --exit-code-from lint-rust lint-rust'
             }
+        }
 
-            // Run the tests
-            stage("Run Tests") {
+        stage('Run Tests') {
+            steps {
                 sh 'INSTALL_TYPE="" ./bin/run_tests'
             }
+        }
 
-            stage("Build documentation") {
+        stage('Build Documentation') {
+            steps {
                 sh 'docker build . -f docs/Dockerfile -t sawtooth-sdk-rust-docs:$ISOLATION_ID'
                 sh 'docker run --rm -v $(pwd):/project/sawtooth-sdk-rust sawtooth-sdk-rust-docs:$ISOLATION_ID'
             }
+        }
+    }
 
-            stage("Archive Build artifacts") {
-                archiveArtifacts artifacts: 'docs/build/**'
-
-            }
+    post {
+        always {
+            sh 'docker-compose -f docker/compose/sawtooth-build.yaml down'
+            sh 'docker-compose -f docker/compose/run-lint.yaml down'
+        }
+        success {
+            archiveArtifacts 'docs/build/**'
+        }
+        aborted {
+            error "Aborted, exiting now"
+        }
+        failure {
+            error "Failed, exiting now"
         }
     }
 }
