@@ -120,9 +120,10 @@ impl MessageSender for ZmqMessageSender {
                     .expect_reply(String::from(correlation_id)),
             );
 
-            sender.send(SocketCommand::Send(msg)).unwrap();
-
-            Ok(future)
+            match sender.send(SocketCommand::Send(msg)) {
+                Ok(_) => Ok(future),
+                Err(_) => Err(SendError::UnknownError),
+            }
         } else {
             Err(SendError::DisconnectedError)
         }
