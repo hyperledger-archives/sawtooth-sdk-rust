@@ -37,6 +37,7 @@ use crate::messages::processor::TpProcessRequest;
 use crate::messages::processor::TpProcessResponse;
 use crate::messages::processor::TpProcessResponse_Status;
 use crate::messages::processor::TpRegisterRequest;
+use crate::messages::processor::TpRegisterRequest_TpProcessRequestHeaderStyle;
 use crate::messages::processor::TpRegisterResponse;
 use crate::messages::processor::TpRegisterResponse_Status;
 use crate::messages::processor::TpUnregisterRequest;
@@ -62,11 +63,14 @@ use self::zmq_context::ZmqTransactionContext;
 #[derive(Debug, Clone)]
 enum FeatureVersion {
     FeatureUnused = 0,
+    FeatureCustomHeaderStyle = 1,
 }
 
 impl FeatureVersion {
     pub const FEATURE_UNUSED: FeatureVersion = FeatureVersion::FeatureUnused;
-    pub const SDK_PROTOCOL_VERSION: FeatureVersion = FeatureVersion::FeatureUnused;
+    pub const FEATURE_CUSTOM_HEADER_STYLE: FeatureVersion =
+        FeatureVersion::FeatureCustomHeaderStyle;
+    pub const SDK_PROTOCOL_VERSION: FeatureVersion = FeatureVersion::FeatureCustomHeaderStyle;
 }
 
 /// Generates a random correlation id for use in Message
@@ -80,6 +84,7 @@ pub struct TransactionProcessor<'a> {
     conn: ZmqMessageConnection,
     handlers: Vec<&'a dyn TransactionHandler>,
     highest_sdk_feature_requested: FeatureVersion,
+    header_style: TpRegisterRequest_TpProcessRequestHeaderStyle,
 }
 
 impl<'a> TransactionProcessor<'a> {
@@ -92,6 +97,7 @@ impl<'a> TransactionProcessor<'a> {
             conn: ZmqMessageConnection::new(endpoint),
             handlers: Vec::new(),
             highest_sdk_feature_requested: FeatureVersion::FEATURE_UNUSED,
+            header_style: TpRegisterRequest_TpProcessRequestHeaderStyle::HEADER_STYLE_UNSET,
         }
     }
 
@@ -104,6 +110,21 @@ impl<'a> TransactionProcessor<'a> {
         self.handlers.push(handler);
     }
 
+    /// Set header style flag, this is used when validator sends TpProcessRequest
+    /// to either send raw header bytes or deserialized transaction header.
+    ///
+    /// # Arguments
+    ///
+    /// * style - header style required in TpProcessRequest
+    pub fn set_header_style(&mut self, style: TpRegisterRequest_TpProcessRequestHeaderStyle) {
+        if FeatureVersion::FeatureCustomHeaderStyle as u32
+            > self.highest_sdk_feature_requested.clone() as u32
+        {
+            self.highest_sdk_feature_requested = FeatureVersion::FeatureCustomHeaderStyle;
+        }
+        self.header_style = style;
+    }
+
     fn register(&mut self, sender: &ZmqMessageSender, unregister: &Arc<AtomicBool>) -> bool {
         for handler in &self.handlers {
             for version in handler.family_versions() {
@@ -112,6 +133,7 @@ impl<'a> TransactionProcessor<'a> {
                 request.set_version(version.clone());
                 request.set_namespaces(RepeatedField::from_vec(handler.namespaces().clone()));
                 request.set_protocol_version(self.highest_sdk_feature_requested.clone() as u32);
+                request.set_request_header_style(self.header_style.clone());
                 info!(
                     "sending TpRegisterRequest: {} {}",
                     &handler.family_name(),
@@ -155,7 +177,9 @@ impl<'a> TransactionProcessor<'a> {
                                 };
                             // Validator gives backward compatible support, do not proceed if SDK
                             // is expecting a feature which validator cannot provide
-                            if resp.get_protocol_version() != self.highest_sdk_feature_requested.clone() as u32 {
+                            if resp.get_protocol_version()
+                                != self.highest_sdk_feature_requested.clone() as u32
+                            {
                                 unregister.store(true, Ordering::SeqCst);
                                 error!(
                                     "Validator version {} does not support \
