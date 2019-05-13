@@ -37,6 +37,8 @@ use crate::messages::processor::TpProcessRequest;
 use crate::messages::processor::TpProcessResponse;
 use crate::messages::processor::TpProcessResponse_Status;
 use crate::messages::processor::TpRegisterRequest;
+use crate::messages::processor::TpRegisterResponse;
+use crate::messages::processor::TpRegisterResponse_Status;
 use crate::messages::processor::TpUnregisterRequest;
 use crate::messages::validator::Message_MessageType;
 use crate::messaging::stream::MessageConnection;
@@ -51,6 +53,21 @@ use protobuf::RepeatedField;
 use self::handler::ApplyError;
 use self::handler::TransactionHandler;
 use self::zmq_context::ZmqTransactionContext;
+
+// This is the version used by SDK to match if validator supports feature
+// it requested during registration. It should only be incremented when
+// there are changes in TpRegisterRequest. Remember to sync this
+// information in validator if changed.
+// Note: SDK_PROTOCOL_VERSION is the highest version the SDK supports
+#[derive(Debug, Clone)]
+enum FeatureVersion {
+    FeatureUnused = 0,
+}
+
+impl FeatureVersion {
+    pub const FEATURE_UNUSED: FeatureVersion = FeatureVersion::FeatureUnused;
+    pub const SDK_PROTOCOL_VERSION: FeatureVersion = FeatureVersion::FeatureUnused;
+}
 
 /// Generates a random correlation id for use in Message
 fn generate_correlation_id() -> String {
@@ -67,6 +84,7 @@ pub struct TransactionProcessor<'a> {
     endpoint: String,
     conn: ZmqMessageConnection,
     handlers: Vec<&'a dyn TransactionHandler>,
+    highest_sdk_feature_requested: FeatureVersion,
 }
 
 impl<'a> TransactionProcessor<'a> {
@@ -78,6 +96,7 @@ impl<'a> TransactionProcessor<'a> {
             endpoint: String::from(endpoint),
             conn: ZmqMessageConnection::new(endpoint),
             handlers: Vec::new(),
+            highest_sdk_feature_requested: FeatureVersion::FEATURE_UNUSED,
         }
     }
 
@@ -97,6 +116,7 @@ impl<'a> TransactionProcessor<'a> {
                 request.set_family(handler.family_name().clone());
                 request.set_version(version.clone());
                 request.set_namespaces(RepeatedField::from_vec(handler.namespaces().clone()));
+                request.set_protocol_version(self.highest_sdk_feature_requested.clone() as u32);
                 info!(
                     "sending TpRegisterRequest: {} {}",
                     &handler.family_name(),
@@ -128,7 +148,36 @@ impl<'a> TransactionProcessor<'a> {
                 // Absorb the TpRegisterResponse message
                 loop {
                     match future.get_timeout(Duration::from_millis(10000)) {
-                        Ok(_) => break,
+                        Ok(response) => {
+                            let resp: TpRegisterResponse =
+                                match protobuf::parse_from_bytes(&response.get_content()) {
+                                    Ok(read_response) => read_response,
+                                    Err(_) => {
+                                        unregister.store(true, Ordering::SeqCst);
+                                        error!("Error while unpacking TpRegisterResponse");
+                                        return false;
+                                    }
+                                };
+                            // Validator gives backward compatible support, do not proceed if SDK
+                            // is expecting a feature which validator cannot provide
+                            if resp.get_protocol_version() != self.highest_sdk_feature_requested.clone() as u32 {
+                                unregister.store(true, Ordering::SeqCst);
+                                error!(
+                                    "Validator version {} does not support \
+                                    requested feature by SDK version {:?}. \
+                                    Unregistering with the validator.",
+                                    resp.get_protocol_version(),
+                                    self.highest_sdk_feature_requested
+                                );
+                                return false;
+                            }
+                            if resp.get_status() == TpRegisterResponse_Status::ERROR {
+                                unregister.store(true, Ordering::SeqCst);
+                                error!("Transaction processor registration failed");
+                                return false;
+                            }
+                            break;
+                        }
                         Err(_) => {
                             if unregister.load(Ordering::SeqCst) {
                                 return false;
