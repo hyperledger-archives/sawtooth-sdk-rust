@@ -138,6 +138,9 @@ pub trait Engine {
 
     /// Get the name of the engine, typically the algorithm being implemented
     fn name(&self) -> String;
+
+    /// Any additional name/version pairs this engine supports
+    fn additional_protocols(&self) -> Vec<(String, String)>;
 }
 
 /// State provided to an engine when it is started
@@ -300,6 +303,9 @@ pub mod tests {
         }
         fn name(&self) -> String {
             "mock".into()
+        }
+        fn additional_protocols(&self) -> Vec<(String, String)> {
+            vec![("1".into(), "Mock".into())]
         }
     }
 
