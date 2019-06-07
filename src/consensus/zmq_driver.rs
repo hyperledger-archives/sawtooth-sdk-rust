@@ -16,7 +16,7 @@
  */
 
 use protobuf;
-use protobuf::{Message as ProtobufMessage, ProtobufError};
+use protobuf::{Message as ProtobufMessage, ProtobufError, RepeatedField};
 use rand;
 use rand::Rng;
 
@@ -80,6 +80,7 @@ impl ZmqDriver {
             Duration::from_secs(REGISTER_TIMEOUT),
             engine.name(),
             engine.version(),
+            engine.additional_protocols(),
         )? {
             Some(state) => state,
             None => wait_until_active(&validator_sender, &validator_receiver)?,
@@ -162,10 +163,14 @@ pub fn register(
     timeout: Duration,
     name: String,
     version: String,
+    additional_protocols: Vec<(String, String)>,
 ) -> Result<Option<StartupState>, Error> {
     let mut request = ConsensusRegisterRequest::new();
     request.set_name(name);
     request.set_version(version);
+    request.set_additional_protocols(RepeatedField::from(protocols_from_tuples(
+        additional_protocols,
+    )));
     let request = request.write_to_bytes()?;
 
     let mut msg = sender
@@ -369,6 +374,20 @@ fn handle_update(
     Ok(())
 }
 
+fn protocols_from_tuples(
+    protocols: Vec<(String, String)>,
+) -> Vec<ConsensusRegisterRequest_Protocol> {
+    protocols
+        .iter()
+        .map(|(p_name, p_version)| {
+            let mut protocol = ConsensusRegisterRequest_Protocol::new();
+            protocol.set_name(p_name.to_string());
+            protocol.set_version(p_version.to_string());
+            protocol
+        })
+        .collect::<Vec<_>>()
+}
+
 impl From<ConsensusBlock> for Block {
     fn from(mut c_block: ConsensusBlock) -> Block {
         Block {
@@ -522,6 +541,10 @@ mod tests {
         );
         assert!("mock" == request.get_name());
         assert!("0" == request.get_version());
+        assert!(
+            protocols_from_tuples(vec![("1".into(), "Mock".into())])
+                == request.get_additional_protocols()
+        );
 
         let _: ConsensusNotifyAck = send_req_rep(
             &connection_id,
