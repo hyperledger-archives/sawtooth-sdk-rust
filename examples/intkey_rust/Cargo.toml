@@ -20,6 +20,10 @@ name = "sawtooth-intkey-tp-rust"
 version = "0.3.2"
 authors = ["Bitwise IO, Inc."]
 
+[[bin]]
+name = "intkey-tp-rust"
+path = "src/main.rs"
+
 [dependencies]
 sawtooth-sdk = { path = "../.." }
 rust-crypto = "0.2"

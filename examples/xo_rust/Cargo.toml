@@ -29,7 +29,7 @@ name = "sawtooth_xo"
 path = "src/lib.rs"
 
 [[bin]]
-name = "xo_rust"
+name = "xo-tp-rust"
 path = "src/main.rs"
 
 [dependencies]

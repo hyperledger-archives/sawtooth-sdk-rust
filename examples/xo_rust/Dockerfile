@@ -44,4 +44,4 @@ CMD cd examples/xo_rust \
  && rm -rf ./bin/ \
  && mkdir -p ./bin/ \
  && cargo build --release \
- && cp ./target/release/xo_rust ./bin/xo_rust
+ && cp ./target/release/xo-tp-rust ./bin/xo-tp-rust

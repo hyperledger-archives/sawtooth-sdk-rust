@@ -15,7 +15,7 @@
 # limitations under the License.
 # -----------------------------------------------------------------------------
 top_dir=$(cd $(dirname $(dirname $0)) && pwd)
-bin=$top_dir/examples/intkey_rust/bin/intkey_rust
+bin=$top_dir/examples/intkey_rust/bin/intkey-tp-rust
 
 if [ -e $bin ]
 then
