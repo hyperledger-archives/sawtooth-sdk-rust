@@ -16,7 +16,7 @@
 
 
 [package]
-name = "intkey_rust"
+name = "sawtooth-intkey-tp-rust"
 version = "0.3.2"
 authors = ["Bitwise IO, Inc."]
 

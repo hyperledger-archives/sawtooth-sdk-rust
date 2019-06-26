@@ -14,7 +14,7 @@
 # -----------------------------------------------------------------------------
 
 [package]
-name = "sawtooth-xo"
+name = "sawtooth-xo-tp-rust"
 version = "0.3.2"
 authors = ["Bitwise IO, Inc."]
 edition = "2018"

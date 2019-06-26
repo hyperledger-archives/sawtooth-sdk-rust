@@ -48,8 +48,8 @@ RUN /root/.cargo/bin/cargo deb
 # -------------=== xo rust docker build ===-------------
 FROM ubuntu:xenial
 
-COPY --from=xo-rust-builder /project/examples/xo_rust/target/debian/xo_rust_*.deb /tmp
+COPY --from=xo-rust-builder /project/examples/xo_rust/target/debian/sawtooth-xo-tp-rust_*.deb /tmp
 
 RUN apt-get update \
- && dpkg -i /tmp/xo_rust_*.deb || true \
+ && dpkg -i /tmp/sawtooth-xo-tp-rust_*.deb || true \
  && apt-get -f -y install
