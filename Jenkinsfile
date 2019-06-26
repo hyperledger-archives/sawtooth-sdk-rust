@@ -106,15 +106,21 @@ pipeline {
                 sh 'docker run --rm -v $(pwd):/project/sawtooth-sdk-rust sawtooth-sdk-rust-docs:$ISOLATION_ID'
             }
         }
+
+        stage('Build/archive artifacts') {
+            sh 'docker-compose -f docker-compose-installed.yaml build'
+            sh 'docker-compose -f docker/compose/copy-debs.yaml up'
+        }
     }
 
     post {
         always {
             sh 'docker-compose -f docker/compose/sawtooth-build.yaml down'
             sh 'docker-compose -f docker/compose/run-lint.yaml down'
+            sh 'docker-compose -f docker/compose/copy-debs.yaml down'
         }
         success {
-            archiveArtifacts 'docs/build/**'
+            archiveArtifacts 'build/debs/*.deb, docs/build/**'
         }
         aborted {
             error "Aborted, exiting now"
