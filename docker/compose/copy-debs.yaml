@@ -1,6 +1,4 @@
-#!/bin/bash
-#
-# Copyright 2018 Bitwise IO, Inc.
+# Copyright 2019 Cargill Incorporated
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,13 +11,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# -----------------------------------------------------------------------------
-top_dir=$(cd $(dirname $(dirname $0)) && pwd)
-bin=$top_dir/examples/intkey_rust/bin/intkey-tp-rust
 
-if [ -e $bin ]
-then
-    $bin $*
-else
-    echo "Please build intkey-tp-rust first with 'docker-compose -f docker/compose/sawtooth-build.yaml up'"
-fi
+version: '3.6'
+
+services:
+
+  intkey-tp-rust:
+    image: sawtooth-intkey-tp-rust:${ISOLATION_ID}
+    volumes:
+      - ../../build/debs:/build/debs
+    command: |
+      bash -c "
+        cp /tmp/*.deb /build/debs
+      "
+
+  xo-tp-rust:
+    image: sawtooth-xo-tp-rust:${ISOLATION_ID}
+    volumes:
+      - ../../build/debs:/build/debs
+    command: |
+      bash -c "
+        cp /tmp/*.deb /build/debs
+      "

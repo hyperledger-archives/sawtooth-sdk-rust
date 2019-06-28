@@ -60,4 +60,4 @@ CMD cd examples/intkey_rust \
  && rm -rf ./bin/ \
  && mkdir -p ./bin/ \
  && cargo build --release \
- && cp ./target/release/intkey_rust ./bin/intkey_rust
+ && cp ./target/release/intkey-tp-rust ./bin/intkey-tp-rust

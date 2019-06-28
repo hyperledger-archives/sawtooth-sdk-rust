@@ -48,8 +48,8 @@ RUN /root/.cargo/bin/cargo deb
 # -------------=== intkey rust docker build ===-------------
 FROM ubuntu:xenial
 
-COPY --from=intkey-rust-builder /project/examples/intkey_rust/target/debian/intkey_rust_*.deb /tmp
+COPY --from=intkey-rust-builder /project/examples/intkey_rust/target/debian/sawtooth-intkey-tp-rust_*.deb /tmp
 
 RUN apt-get update \
- && dpkg -i /tmp/intkey_rust_*.deb || true \
+ && dpkg -i /tmp/sawtooth-intkey-tp-rust_*.deb || true \
  && apt-get -f -y install

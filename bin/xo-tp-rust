@@ -15,11 +15,11 @@
 # limitations under the License.
 # -----------------------------------------------------------------------------
 top_dir=$(cd $(dirname $(dirname $0)) && pwd)
-bin=$top_dir/examples/xo_rust/bin/xo_rust
+bin=$top_dir/examples/xo_rust/bin/xo-tp-rust
 
 if [ -e $bin ]
 then
     $bin $*
 else
-    echo "Please build xo_rust first with 'build_all' or 'build_rust'"
+    echo "Please build xo_rust first with 'docker-compose -f docker/compose/sawtooth-build.yaml up'"
 fi

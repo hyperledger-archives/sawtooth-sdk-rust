@@ -14,7 +14,7 @@
 # -----------------------------------------------------------------------------
 
 [package]
-name = "sawtooth-xo"
+name = "sawtooth-xo-tp-rust"
 version = "0.3.2"
 authors = ["Bitwise IO, Inc."]
 edition = "2018"
@@ -29,7 +29,7 @@ name = "sawtooth_xo"
 path = "src/lib.rs"
 
 [[bin]]
-name = "xo_rust"
+name = "xo-tp-rust"
 path = "src/main.rs"
 
 [dependencies]
