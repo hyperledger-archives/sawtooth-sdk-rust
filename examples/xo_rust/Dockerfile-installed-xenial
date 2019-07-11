@@ -43,6 +43,7 @@ COPY . /project
 
 WORKDIR /project/examples/xo_rust/
 
+RUN sed -i -e s/version.*$/version\ =\ \"$(../../bin/get_version)\"/ Cargo.toml
 RUN /root/.cargo/bin/cargo deb
 
 # -------------=== xo rust docker build ===-------------
