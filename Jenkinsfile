@@ -74,12 +74,6 @@ pipeline {
             }
         }
 
-        stage('Fetch Tags') {
-            steps {
-                sh 'git fetch --tag'
-            }
-        }
-
         stage('Build Lint Requirements') {
             steps{
                 sh 'docker-compose -f docker/compose/run-lint.yaml build'
