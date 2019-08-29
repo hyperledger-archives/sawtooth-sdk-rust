@@ -19,8 +19,14 @@ mod game;
 mod payload;
 mod state;
 
-use sawtooth_sdk::messages::processor::TpProcessRequest;
-use sawtooth_sdk::processor::handler::{ApplyError, TransactionContext, TransactionHandler};
+cfg_if! {
+    if #[cfg(target_arch = "wasm32")] {
+        use sabre_sdk::{ApplyError, TpProcessRequest, TransactionContext, TransactionHandler, WasmPtr, execute_entrypoint};
+    } else {
+        use sawtooth_sdk::messages::processor::TpProcessRequest;
+        use sawtooth_sdk::processor::handler::{ApplyError, TransactionContext, TransactionHandler};
+    }
+}
 
 use crate::handler::game::Game;
 use crate::handler::payload::XoPayload;
@@ -60,17 +66,9 @@ impl TransactionHandler for XoTransactionHandler {
         request: &TpProcessRequest,
         context: &mut dyn TransactionContext,
     ) -> Result<(), ApplyError> {
-        let header = &request.header;
-        let signer = match &header.as_ref() {
-            Some(s) => &s.signer_public_key,
-            None => {
-                return Err(ApplyError::InvalidTransaction(String::from(
-                    "Invalid header",
-                )));
-            }
-        };
+        let signer = request.get_header().get_signer_public_key();
 
-        let payload = XoPayload::new(&request.payload)?;
+        let payload = XoPayload::new(request.get_payload())?;
 
         let mut state = XoState::new(context);
 
@@ -170,4 +168,26 @@ impl TransactionHandler for XoTransactionHandler {
 
         Ok(())
     }
+}
+
+#[cfg(target_arch = "wasm32")]
+// Sabre apply must return a bool
+fn apply(
+    request: &TpProcessRequest,
+    context: &mut dyn TransactionContext,
+) -> Result<bool, ApplyError> {
+    let handler = XoTransactionHandler::new();
+    match handler.apply(request, context) {
+        Ok(_) => Ok(true),
+        Err(err) => {
+            info!("{}", err);
+            Err(err)
+        }
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+#[no_mangle]
+pub unsafe fn entrypoint(payload: WasmPtr, signer: WasmPtr, signature: WasmPtr) -> i32 {
+    execute_entrypoint(payload, signer, signature, apply)
 }

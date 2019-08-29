@@ -15,7 +15,13 @@
  * -----------------------------------------------------------------------------
  */
 
-use sawtooth_sdk::processor::handler::ApplyError;
+cfg_if! {
+    if #[cfg(target_arch = "wasm32")] {
+        use sabre_sdk::ApplyError;
+    } else {
+        use sawtooth_sdk::processor::handler::ApplyError;
+    }
+}
 
 pub struct XoPayload {
     name: String,

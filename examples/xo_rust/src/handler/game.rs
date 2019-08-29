@@ -15,8 +15,15 @@
  * -----------------------------------------------------------------------------
  */
 
-use sawtooth_sdk::processor::handler::ApplyError;
 use std::collections::HashMap;
+
+cfg_if! {
+    if #[cfg(target_arch = "wasm32")] {
+        use sabre_sdk::ApplyError;
+    } else {
+        use sawtooth_sdk::processor::handler::ApplyError;
+    }
+}
 
 const POSSIBLE_WINS: [(usize, usize, usize); 8] = [
     (1, 2, 3),

@@ -16,20 +16,31 @@
  */
 
 #[macro_use]
-extern crate clap;
-#[macro_use]
-extern crate log;
+extern crate cfg_if;
 
-use std::process;
+cfg_if! {
+    if #[cfg(not(target_arch = "wasm32"))] {
+        #[macro_use]
+        extern crate clap;
+        #[macro_use]
+        extern crate log;
 
-use log::LevelFilter;
-use log4rs::append::console::ConsoleAppender;
-use log4rs::config::{Appender, Config, Root};
-use log4rs::encode::pattern::PatternEncoder;
+        use std::process;
 
-use sawtooth_sdk::processor::TransactionProcessor;
-use sawtooth_xo::handler::XoTransactionHandler;
+        use log::LevelFilter;
+        use log4rs::append::console::ConsoleAppender;
+        use log4rs::config::{Appender, Config, Root};
+        use log4rs::encode::pattern::PatternEncoder;
 
+        use sawtooth_sdk::processor::TransactionProcessor;
+        use sawtooth_xo::handler::XoTransactionHandler;
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+fn main() {}
+
+#[cfg(not(target_arch = "wasm32"))]
 fn main() {
     let matches = clap_app!(xo =>
         (version: crate_version!())

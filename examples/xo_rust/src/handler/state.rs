@@ -20,8 +20,14 @@ use std::str::from_utf8;
 
 use crypto::digest::Digest;
 use crypto::sha2::Sha512;
-use sawtooth_sdk::processor::handler::ApplyError;
-use sawtooth_sdk::processor::handler::TransactionContext;
+
+cfg_if! {
+    if #[cfg(target_arch = "wasm32")] {
+        use sabre_sdk::{ApplyError, TransactionContext};
+    } else {
+        use sawtooth_sdk::processor::handler::{ApplyError, TransactionContext};
+    }
+}
 
 use crate::handler::game::Game;
 
