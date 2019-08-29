@@ -62,7 +62,7 @@ fn generate_correlation_id() -> String {
 pub struct TransactionProcessor<'a> {
     endpoint: String,
     conn: ZmqMessageConnection,
-    handlers: Vec<&'a TransactionHandler>,
+    handlers: Vec<&'a dyn TransactionHandler>,
 }
 
 impl<'a> TransactionProcessor<'a> {
@@ -82,7 +82,7 @@ impl<'a> TransactionProcessor<'a> {
     /// # Arguments
     ///
     /// * handler - the handler to be added
-    pub fn add_handler(&mut self, handler: &'a TransactionHandler) {
+    pub fn add_handler(&mut self, handler: &'a dyn TransactionHandler) {
         self.handlers.push(handler);
     }
 
@@ -172,7 +172,7 @@ impl<'a> TransactionProcessor<'a> {
     /// Connects the transaction processor to a validator and starts
     /// listening for requests and routing them to an appropriate
     /// transaction handler.
-    #[allow(clippy::cyclomatic_complexity)]
+    #[allow(clippy::cognitive_complexity)]
     pub fn start(&mut self) {
         let unregister = Arc::new(AtomicBool::new(false));
         let r = unregister.clone();

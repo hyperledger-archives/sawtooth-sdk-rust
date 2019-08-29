@@ -73,7 +73,7 @@ impl std::error::Error for SendError {
         }
     }
 
-    fn cause(&self) -> Option<&std::error::Error> {
+    fn cause(&self) -> Option<&dyn std::error::Error> {
         match *self {
             SendError::DisconnectedError => None,
             SendError::TimeoutError => None,
@@ -109,7 +109,7 @@ impl std::error::Error for ReceiveError {
         }
     }
 
-    fn cause(&self) -> Option<&std::error::Error> {
+    fn cause(&self) -> Option<&dyn std::error::Error> {
         match *self {
             ReceiveError::TimeoutError => None,
             ReceiveError::ChannelError(ref err) => Some(err),

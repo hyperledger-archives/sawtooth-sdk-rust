@@ -129,7 +129,7 @@ pub trait Engine {
     fn start(
         &mut self,
         updates: Receiver<Update>,
-        service: Box<Service>,
+        service: Box<dyn Service>,
         startup_state: StartupState,
     ) -> Result<(), Error>;
 
@@ -178,7 +178,7 @@ impl error::Error for Error {
         }
     }
 
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         use self::Error::*;
         match *self {
             EncodingError(_) => None,
@@ -248,7 +248,7 @@ pub mod tests {
         fn start(
             &mut self,
             updates: Receiver<Update>,
-            _service: Box<Service>,
+            _service: Box<dyn Service>,
             _startup_state: StartupState,
         ) -> Result<(), Error> {
             (*self.calls.lock().unwrap()).push("start".into());

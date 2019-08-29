@@ -160,7 +160,7 @@ impl Context for Secp256k1Context {
         "secp256k1"
     }
 
-    fn sign(&self, message: &[u8], key: &PrivateKey) -> Result<String, Error> {
+    fn sign(&self, message: &[u8], key: &dyn PrivateKey) -> Result<String, Error> {
         let mut sha = Sha256::new();
         sha.input(message);
         let hash: &mut [u8] = &mut [0; 32];
@@ -178,7 +178,7 @@ impl Context for Secp256k1Context {
             .join(""))
     }
 
-    fn verify(&self, signature: &str, message: &[u8], key: &PublicKey) -> Result<bool, Error> {
+    fn verify(&self, signature: &str, message: &[u8], key: &dyn PublicKey) -> Result<bool, Error> {
         let mut sha = Sha256::new();
         sha.input(message);
         let hash: &mut [u8] = &mut [0; 32];
@@ -196,7 +196,7 @@ impl Context for Secp256k1Context {
         }
     }
 
-    fn get_public_key(&self, private_key: &PrivateKey) -> Result<Box<PublicKey>, Error> {
+    fn get_public_key(&self, private_key: &dyn PrivateKey) -> Result<Box<dyn PublicKey>, Error> {
         let sk = secp256k1::key::SecretKey::from_slice(&self.context, private_key.as_slice())?;
         let result = Secp256k1PublicKey::from_hex(
             bytes_to_hex_str(
@@ -211,7 +211,7 @@ impl Context for Secp256k1Context {
         }
     }
 
-    fn new_random_private_key(&self) -> Result<Box<PrivateKey>, Error> {
+    fn new_random_private_key(&self) -> Result<Box<dyn PrivateKey>, Error> {
         let mut rng = OsRng::new().map_err(|err| Error::KeyGenError(format!("{}", err)))?;
         let mut key = [0u8; secp256k1::constants::SECRET_KEY_SIZE];
         rng.fill_bytes(&mut key);

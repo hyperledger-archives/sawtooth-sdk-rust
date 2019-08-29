@@ -29,7 +29,7 @@ pub enum Error {
     /// Public key from various formats.
     ParseError(String),
     /// Returned when an error occurs during the signing process.
-    SigningError(Box<StdError>),
+    SigningError(Box<dyn StdError>),
     /// Returned when an error occurs during key generation
     KeyGenError(String),
 }
@@ -44,7 +44,7 @@ impl StdError for Error {
         }
     }
 
-    fn cause(&self) -> Option<&StdError> {
+    fn cause(&self) -> Option<&dyn StdError> {
         match *self {
             Error::NoSuchAlgorithm(_) => None,
             Error::ParseError(_) => None,
@@ -102,7 +102,7 @@ pub trait Context {
     /// # Returns
     ///
     /// * `signature` - The signature in a hex-encoded string
-    fn sign(&self, message: &[u8], key: &PrivateKey) -> Result<String, Error>;
+    fn sign(&self, message: &[u8], key: &dyn PrivateKey) -> Result<String, Error>;
 
     /// Verifies that the signature of a message was produced with the
     /// associated public key.
@@ -116,7 +116,7 @@ pub trait Context {
     ///
     /// * `boolean` - True if the public key is associated with the signature for that method,
     ///            False otherwise
-    fn verify(&self, signature: &str, message: &[u8], key: &PublicKey) -> Result<bool, Error>;
+    fn verify(&self, signature: &str, message: &[u8], key: &dyn PublicKey) -> Result<bool, Error>;
 
     /// Produce the public key for the given private key.
     /// # Arguments
@@ -125,16 +125,16 @@ pub trait Context {
     ///
     /// # Returns
     /// * `public_key` - the public key for the given private key
-    fn get_public_key(&self, private_key: &PrivateKey) -> Result<Box<PublicKey>, Error>;
+    fn get_public_key(&self, private_key: &dyn PrivateKey) -> Result<Box<dyn PublicKey>, Error>;
 
     ///Generates a new random PrivateKey using this context.
     /// # Returns
     ///
     /// * `private_key` - a random private key
-    fn new_random_private_key(&self) -> Result<Box<PrivateKey>, Error>;
+    fn new_random_private_key(&self) -> Result<Box<dyn PrivateKey>, Error>;
 }
 
-pub fn create_context(algorithm_name: &str) -> Result<Box<Context>, Error> {
+pub fn create_context(algorithm_name: &str) -> Result<Box<dyn Context>, Error> {
     match algorithm_name {
         "secp256k1" => Ok(Box::new(secp256k1::Secp256k1Context::new())),
         _ => Err(Error::NoSuchAlgorithm(format!(
@@ -145,7 +145,7 @@ pub fn create_context(algorithm_name: &str) -> Result<Box<Context>, Error> {
 }
 /// Factory for generating signers.
 pub struct CryptoFactory<'a> {
-    context: &'a Context,
+    context: &'a dyn Context,
 }
 
 impl<'a> CryptoFactory<'a> {
@@ -153,7 +153,7 @@ impl<'a> CryptoFactory<'a> {
     /// # Arguments
     ///
     /// * `context` - a cryptographic context
-    pub fn new(context: &'a Context) -> Self {
+    pub fn new(context: &'a dyn Context) -> Self {
         CryptoFactory { context }
     }
 
@@ -162,7 +162,7 @@ impl<'a> CryptoFactory<'a> {
     /// # Returns
     ///
     /// * `context` - a cryptographic context
-    pub fn get_context(&self) -> &Context {
+    pub fn get_context(&self) -> &dyn Context {
         self.context
     }
 
@@ -175,15 +175,15 @@ impl<'a> CryptoFactory<'a> {
     /// # Returns
     ///
     /// * `signer` - a signer instance
-    pub fn new_signer(&self, key: &'a PrivateKey) -> Signer {
+    pub fn new_signer(&self, key: &'a dyn PrivateKey) -> Signer {
         Signer::new(self.context, key)
     }
 }
 
 /// A convenient wrapper of Context and PrivateKey
 pub struct Signer<'a> {
-    context: &'a Context,
-    key: &'a PrivateKey,
+    context: &'a dyn Context,
+    key: &'a dyn PrivateKey,
 }
 
 impl<'a> Signer<'a> {
@@ -193,7 +193,7 @@ impl<'a> Signer<'a> {
     ///
     /// * `context` - a cryptographic context
     /// * `private_key` - private key
-    pub fn new(context: &'a Context, key: &'a PrivateKey) -> Self {
+    pub fn new(context: &'a dyn Context, key: &'a dyn PrivateKey) -> Self {
         Signer { context, key }
     }
 
@@ -215,7 +215,7 @@ impl<'a> Signer<'a> {
     /// # Returns
     ///
     /// * `public_key` - the public key instance
-    pub fn get_public_key(&self) -> Result<Box<PublicKey>, Error> {
+    pub fn get_public_key(&self) -> Result<Box<dyn PublicKey>, Error> {
         self.context.get_public_key(self.key)
     }
 }

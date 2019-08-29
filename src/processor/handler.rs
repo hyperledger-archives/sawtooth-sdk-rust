@@ -47,7 +47,7 @@ impl std::error::Error for ApplyError {
         }
     }
 
-    fn cause(&self) -> Option<&std::error::Error> {
+    fn cause(&self) -> Option<&dyn std::error::Error> {
         match *self {
             ApplyError::InvalidTransaction(_) => None,
             ApplyError::InternalError(_) => None,
@@ -73,11 +73,11 @@ pub enum ContextError {
     /// Returned when there is an issues setting receipt data or events.
     TransactionReceiptError(String),
     /// Returned when a ProtobufError is returned during serializing
-    SerializationError(Box<StdError>),
+    SerializationError(Box<dyn StdError>),
     /// Returned when an error is returned when sending a message
-    SendError(Box<StdError>),
+    SendError(Box<dyn StdError>),
     /// Returned when an error is returned when sending a message
-    ReceiveError(Box<StdError>),
+    ReceiveError(Box<dyn StdError>),
 }
 
 impl std::error::Error for ContextError {
@@ -92,7 +92,7 @@ impl std::error::Error for ContextError {
         }
     }
 
-    fn cause(&self) -> Option<&std::error::Error> {
+    fn cause(&self) -> Option<&dyn std::error::Error> {
         match *self {
             ContextError::AuthorizationError(_) => None,
             ContextError::ResponseAttributeError(_) => None,

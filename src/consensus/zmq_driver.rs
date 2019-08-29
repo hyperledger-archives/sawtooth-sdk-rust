@@ -159,7 +159,7 @@ fn driver_loop(
 }
 
 pub fn register(
-    sender: &mut MessageSender,
+    sender: &mut dyn MessageSender,
     timeout: Duration,
     name: String,
     version: String,
@@ -308,7 +308,7 @@ fn wait_until_active(
 
 fn handle_update(
     msg: &Message,
-    validator_sender: &mut MessageSender,
+    validator_sender: &mut dyn MessageSender,
     update_sender: &mut Sender<Update>,
 ) -> Result<(), Error> {
     use self::Message_MessageType::*;
@@ -327,9 +327,9 @@ fn handle_update(
         CONSENSUS_NOTIFY_PEER_MESSAGE => {
             let mut request: ConsensusNotifyPeerMessage =
                 protobuf::parse_from_bytes(msg.get_content())?;
-            let mut header: ConsensusPeerMessageHeader =
+            let header: ConsensusPeerMessageHeader =
                 protobuf::parse_from_bytes(request.get_message().get_header())?;
-            let mut message = request.take_message();
+            let message = request.take_message();
             Update::PeerMessage(
                 from_consensus_peer_message(message, header),
                 request.take_sender_id(),

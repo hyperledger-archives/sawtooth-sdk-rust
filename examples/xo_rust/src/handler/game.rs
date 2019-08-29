@@ -47,6 +47,19 @@ pub struct Game {
     player2_short: String,
 }
 
+impl ToString for Game {
+    fn to_string(&self) -> String {
+        let fields = vec![
+            self.name.clone(),
+            self.board.clone(),
+            self.game_state.clone(),
+            self.player1.clone(),
+            self.player2.clone(),
+        ];
+        fields.join(",")
+    }
+}
+
 impl Game {
     pub fn new(name: String) -> Game {
         Game {
@@ -58,17 +71,6 @@ impl Game {
             player1_short: String::from(""),
             player2_short: String::from(""),
         }
-    }
-
-    fn to_string(&self) -> String {
-        let fields = vec![
-            self.name.clone(),
-            self.board.clone(),
-            self.game_state.clone(),
-            self.player1.clone(),
-            self.player2.clone(),
-        ];
-        fields.join(",")
     }
 
     fn from_string(game_string: &str) -> Option<Game> {
