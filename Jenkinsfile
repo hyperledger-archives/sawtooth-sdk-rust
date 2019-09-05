@@ -116,7 +116,7 @@ pipeline {
             sh 'docker-compose -f docker/compose/copy-debs.yaml down'
         }
         success {
-            archiveArtifacts 'build/debs/*.deb, docs/build/**'
+            archiveArtifacts 'build/debs/*.deb, build/scar/*.scar, docs/build/**'
         }
         aborted {
             error "Aborted, exiting now"

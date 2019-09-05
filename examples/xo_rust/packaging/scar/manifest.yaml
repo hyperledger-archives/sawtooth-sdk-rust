@@ -12,33 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-version: '3.6'
-
-services:
-
-  intkey-tp-rust:
-    image: sawtooth-intkey-tp-rust:${ISOLATION_ID}
-    volumes:
-      - ../../build/debs:/build/debs
-    command: |
-      bash -c "
-        cp /tmp/*.deb /build/debs
-      "
-
-  xo-tp-rust:
-    image: sawtooth-xo-tp-rust:${ISOLATION_ID}
-    volumes:
-      - ../../build/debs:/build/debs
-    command: |
-      bash -c "
-        cp /tmp/*.deb /build/debs
-      "
-
-  xo-scar:
-    image: xo-scar:${ISOLATION_ID}
-    volumes:
-      - ../../build/scar:/build/scar
-    command: |
-      bash -c "
-        cp /tmp/*.scar /build/scar
-      "
+name: sawtooth_xo
+version: '1.0'
+inputs:
+  - '00ec03'
+  - 'cad11d'
+  - '5b7349'
+outputs:
+  - '00ec03'
+  - 'cad11d'
+  - '5b7349'
