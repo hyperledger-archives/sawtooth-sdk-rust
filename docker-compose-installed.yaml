@@ -37,3 +37,13 @@ services:
         - no_proxy
     image: sawtooth-xo-tp-rust:${ISOLATION_ID}
     container_name: sawtooth-xo-tp-rust-default
+
+  xo-scar:
+    build:
+      context: .
+      dockerfile: examples/xo_rust/Dockerfile-scar
+      args:
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    image: xo-scar:${ISOLATION_ID}
