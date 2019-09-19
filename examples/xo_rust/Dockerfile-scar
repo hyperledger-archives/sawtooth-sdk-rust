@@ -61,7 +61,8 @@ RUN cargo build --target wasm32-unknown-unknown --release
 # Remove the auto-generated .rs files and the built files
 RUN rm target/wasm32-unknown-unknown/release/xo-tp-rust* \
     target/wasm32-unknown-unknown/release/deps/xo* \
-    target/wasm32-unknown-unknown/release/libsawtooth_xo.*
+    target/wasm32-unknown-unknown/release/libsawtooth_xo.* \
+    target/wasm32-unknown-unknown/release/deps/libsawtooth_xo*
 
 # Copy over source files
 COPY examples/xo_rust/src /build/examples/xo_rust/src
