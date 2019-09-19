@@ -21,7 +21,7 @@ mod state;
 
 cfg_if! {
     if #[cfg(target_arch = "wasm32")] {
-        use sabre_sdk::{ApplyError, TpProcessRequest, TransactionContext, TransactionHandler, WasmPtr, execute_entrypoint};
+        use sabre_sdk::{ApplyError, TpProcessRequest, TransactionContext, TransactionHandler,};
     } else {
         use sawtooth_sdk::messages::processor::TpProcessRequest;
         use sawtooth_sdk::processor::handler::{ApplyError, TransactionContext, TransactionHandler};
@@ -172,7 +172,7 @@ impl TransactionHandler for XoTransactionHandler {
 
 #[cfg(target_arch = "wasm32")]
 // Sabre apply must return a bool
-fn apply(
+pub fn apply(
     request: &TpProcessRequest,
     context: &mut dyn TransactionContext,
 ) -> Result<bool, ApplyError> {
@@ -184,10 +184,4 @@ fn apply(
             Err(err)
         }
     }
-}
-
-#[cfg(target_arch = "wasm32")]
-#[no_mangle]
-pub unsafe fn entrypoint(payload: WasmPtr, signer: WasmPtr, signature: WasmPtr) -> i32 {
-    execute_entrypoint(payload, signer, signature, apply)
 }

@@ -34,11 +34,11 @@ cfg_if! {
 
         use sawtooth_sdk::processor::TransactionProcessor;
         use sawtooth_xo::handler::XoTransactionHandler;
+    } else {
+        use sawtooth_xo::handler::apply;
+        use sabre_sdk::{WasmPtr, execute_entrypoint};
     }
 }
-
-#[cfg(target_arch = "wasm32")]
-fn main() {}
 
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {
@@ -97,4 +97,13 @@ fn main() {
 
     processor.add_handler(&handler);
     processor.start();
+}
+
+#[cfg(target_arch = "wasm32")]
+fn main() {}
+
+#[cfg(target_arch = "wasm32")]
+#[no_mangle]
+pub unsafe fn entrypoint(payload: WasmPtr, signer: WasmPtr, signature: WasmPtr) -> i32 {
+    execute_entrypoint(payload, signer, signature, apply)
 }
