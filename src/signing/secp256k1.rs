@@ -14,8 +14,6 @@
  * limitations under the License.
  * ------------------------------------------------------------------------------
  */
-use crypto::digest::Digest;
-use crypto::sha2::Sha256;
 #[cfg(feature = "pem")]
 use openssl::{
     bn::{BigNum, BigNumContext},
@@ -27,6 +25,7 @@ use openssl::{
 };
 use rand::rngs::OsRng;
 use rand::RngCore;
+use sha2::{Digest, Sha256};
 
 use crate::signing::bytes_to_hex_str;
 use crate::signing::hex_str_to_bytes;
@@ -163,15 +162,12 @@ impl Context for Secp256k1Context {
     }
 
     fn sign(&self, message: &[u8], key: &dyn PrivateKey) -> Result<String, Error> {
-        let mut sha = Sha256::new();
-        sha.input(message);
-        let hash: &mut [u8] = &mut [0; 32];
-        sha.result(hash);
+        let hash = Sha256::digest(message);
 
         let sk = secp256k1::SecretKey::from_slice(key.as_slice())?;
         let sig = self
             .context
-            .sign_ecdsa(&secp256k1::Message::from_slice(hash)?, &sk);
+            .sign_ecdsa(&secp256k1::Message::from_slice(&*hash)?, &sk);
         let compact = sig.serialize_compact();
         Ok(compact
             .iter()
@@ -181,13 +177,10 @@ impl Context for Secp256k1Context {
     }
 
     fn verify(&self, signature: &str, message: &[u8], key: &dyn PublicKey) -> Result<bool, Error> {
-        let mut sha = Sha256::new();
-        sha.input(message);
-        let hash: &mut [u8] = &mut [0; 32];
-        sha.result(hash);
+        let hash = Sha256::digest(message);
 
         let result = self.context.verify_ecdsa(
-            &secp256k1::Message::from_slice(hash)?,
+            &secp256k1::Message::from_slice(&*hash)?,
             &secp256k1::ecdsa::Signature::from_compact(&hex_str_to_bytes(signature)?)?,
             &secp256k1::PublicKey::from_slice(key.as_slice())?,
         );

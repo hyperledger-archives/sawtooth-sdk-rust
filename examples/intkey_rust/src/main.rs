@@ -18,11 +18,12 @@
 extern crate cbor;
 #[macro_use]
 extern crate clap;
-extern crate crypto;
+extern crate hex;
 #[macro_use]
 extern crate log;
 extern crate log4rs;
 extern crate sawtooth_sdk;
+extern crate sha2;
 
 mod handler;
 
