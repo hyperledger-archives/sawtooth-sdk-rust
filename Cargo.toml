@@ -44,7 +44,7 @@ hex = "0.3"
 protobuf="2"
 secp256k1 = "0.7.1"
 rand = "0.4.2"
-rust-crypto = "0.2.36"
+sha2 = "0.8"
 zmq = "0.9"
 uuid = { version = "0.5", features = ["v4"] }
 log = "0.3"

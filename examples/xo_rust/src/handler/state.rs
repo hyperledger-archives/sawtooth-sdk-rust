@@ -18,8 +18,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::str::from_utf8;
 
-use crypto::digest::Digest;
-use crypto::sha2::Sha512;
+use sha2::{Digest, Sha512};
 
 cfg_if! {
     if #[cfg(target_arch = "wasm32")] {
@@ -32,9 +31,7 @@ cfg_if! {
 use crate::handler::game::Game;
 
 pub fn get_xo_prefix() -> String {
-    let mut sha = Sha512::new();
-    sha.input_str("xo");
-    sha.result_str()[..6].to_string()
+    hex::encode(Sha512::digest(b"xo"))[..6].to_string()
 }
 
 pub struct XoState<'a> {
@@ -51,9 +48,8 @@ impl<'a> XoState<'a> {
     }
 
     fn calculate_address(name: &str) -> String {
-        let mut sha = Sha512::new();
-        sha.input_str(name);
-        get_xo_prefix() + &sha.result_str()[..64].to_string()
+        let sha = hex::encode(Sha512::digest(name.as_bytes()))[64..].to_string();
+        get_xo_prefix() + &sha
     }
 
     pub fn delete_game(&mut self, game_name: &str) -> Result<(), ApplyError> {

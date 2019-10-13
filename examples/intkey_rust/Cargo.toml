@@ -26,7 +26,8 @@ path = "src/main.rs"
 
 [dependencies]
 sawtooth-sdk = { path = "../.." }
-rust-crypto = "0.2"
+sha2 = "0.8"
+hex = "0.4"
 clap = "2"
 log = "0.4"
 log4rs = "0.8"

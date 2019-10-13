@@ -35,13 +35,13 @@ path = "src/main.rs"
 [dependencies]
 clap = "2"
 cfg-if = "0.1"
+sha2 = "0.8"
+hex = "0.4"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-rust-crypto-wasm = "0.3"
 sabre-sdk = "0.4"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-rust-crypto = "0.2"
 sawtooth-sdk = { path = "../.." }
 log = "0.4"
 log4rs = "0.8"

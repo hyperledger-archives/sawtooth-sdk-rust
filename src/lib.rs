@@ -15,9 +15,9 @@
  * ------------------------------------------------------------------------------
  */
 
-extern crate crypto;
 extern crate hex;
 extern crate libc;
+extern crate sha2;
 #[macro_use]
 extern crate log;
 #[cfg(feature = "pem")]

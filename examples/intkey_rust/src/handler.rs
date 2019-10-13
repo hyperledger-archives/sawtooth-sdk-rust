@@ -17,8 +17,7 @@
 
 use cbor;
 
-use crypto::digest::Digest;
-use crypto::sha2::Sha512;
+use sha2::{Digest, Sha512};
 
 use std::collections::BTreeMap;
 use std::collections::HashMap;
@@ -60,9 +59,7 @@ impl fmt::Display for Verb {
 }
 
 fn get_intkey_prefix() -> String {
-    let mut sha = Sha512::new();
-    sha.input_str("intkey");
-    sha.result_str()[..6].to_string()
+    hex::encode(Sha512::digest(b"intkey"))[..6].to_string()
 }
 
 struct IntkeyPayload {
@@ -173,9 +170,8 @@ impl<'a> IntkeyState<'a> {
     }
 
     fn calculate_address(name: &str) -> String {
-        let mut sha = Sha512::new();
-        sha.input(name.as_bytes());
-        get_intkey_prefix() + &sha.result_str()[64..].to_string()
+        let sha = hex::encode(Sha512::digest(name.as_bytes()))[64..].to_string();
+        get_intkey_prefix() + &sha
     }
 
     pub fn get(&mut self, name: &str) -> Result<Option<u32>, ApplyError> {
@@ -188,7 +184,7 @@ impl<'a> IntkeyState<'a> {
                 let map_value = decoder
                     .value()
                     .map_err(|err| ApplyError::InternalError(format!("{}", err)))?;
-                let mut map = match map_value {
+                let map = match map_value {
                     Value::Map(m) => m,
                     _ => {
                         return Err(ApplyError::InternalError(String::from(
