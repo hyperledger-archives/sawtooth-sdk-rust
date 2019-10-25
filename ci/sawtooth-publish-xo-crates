@@ -27,6 +27,7 @@ FROM ubuntu:bionic
 RUN apt-get update \
  && apt-get install -y \
     curl \
+    git \
     gcc \
     libssl-dev \
     libzmq3-dev \
