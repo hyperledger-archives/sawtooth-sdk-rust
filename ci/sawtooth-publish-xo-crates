@@ -27,6 +27,7 @@ FROM ubuntu:bionic
 RUN apt-get update \
  && apt-get install -y \
     curl \
+    git \
     gcc \
     libssl-dev \
     libzmq3-dev \
@@ -53,6 +54,7 @@ CMD cargo login $CARGO_CRED \
  && SDK_VER=$(grep ^version ../../Cargo.toml |awk '{print $3}' | tr -d '"') \
  && MINOR_VERSION=${SDK_VER%.*} \
  && sed -i'' -e "s/sawtooth-sdk.*$/sawtooth-sdk\ =\ \"$MINOR_VERSION\"/" Cargo.toml \
+ && sed -i'' -e 's/name = "sawtooth-xo-tp-rust"/name = "sawtooth-xo"/' Cargo.toml \
  && cargo clean \
  && cargo test \
  && cargo publish --allow-dirty \
