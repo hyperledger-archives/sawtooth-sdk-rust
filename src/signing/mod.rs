@@ -180,10 +180,14 @@ impl<'a> CryptoFactory<'a> {
     }
 }
 
+enum ContextAndKey<'a> {
+    ByRef(&'a dyn Context, &'a dyn PrivateKey),
+    ByBox(Box<dyn Context>, Box<dyn PrivateKey>),
+}
+
 /// A convenient wrapper of Context and PrivateKey
 pub struct Signer<'a> {
-    context: &'a dyn Context,
-    key: &'a dyn PrivateKey,
+    context_and_key: ContextAndKey<'a>,
 }
 
 impl<'a> Signer<'a> {
@@ -194,7 +198,21 @@ impl<'a> Signer<'a> {
     /// * `context` - a cryptographic context
     /// * `private_key` - private key
     pub fn new(context: &'a dyn Context, key: &'a dyn PrivateKey) -> Self {
-        Signer { context, key }
+        Signer {
+            context_and_key: ContextAndKey::ByRef(context, key),
+        }
+    }
+
+    /// Constructs a new Signer with boxed arguments
+    ///
+    /// # Arguments
+    ///
+    /// * `context` - a cryptographic context
+    /// * `key` - private key
+    pub fn new_boxed(context: Box<dyn Context>, key: Box<dyn PrivateKey>) -> Self {
+        Signer {
+            context_and_key: ContextAndKey::ByBox(context, key),
+        }
     }
 
     /// Signs the given message.
@@ -207,7 +225,10 @@ impl<'a> Signer<'a> {
     ///
     /// * `signature` - the signature in a hex-encoded string
     pub fn sign(&self, message: &[u8]) -> Result<String, Error> {
-        self.context.sign(message, self.key)
+        match &self.context_and_key {
+            ContextAndKey::ByRef(context, key) => context.sign(message, *key),
+            ContextAndKey::ByBox(context, key) => context.sign(message, key.as_ref()),
+        }
     }
 
     /// Return the public key for this Signer instance.
@@ -216,7 +237,10 @@ impl<'a> Signer<'a> {
     ///
     /// * `public_key` - the public key instance
     pub fn get_public_key(&self) -> Result<Box<dyn PublicKey>, Error> {
-        self.context.get_public_key(self.key)
+        match &self.context_and_key {
+            ContextAndKey::ByRef(context, key) => context.get_public_key(*key),
+            ContextAndKey::ByBox(context, key) => context.get_public_key(key.as_ref()),
+        }
     }
 }
 

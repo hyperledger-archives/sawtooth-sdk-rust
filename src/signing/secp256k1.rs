@@ -256,6 +256,7 @@ mod secp256k1_test {
     use super::super::CryptoFactory;
     use super::super::PrivateKey;
     use super::super::PublicKey;
+    use super::super::Signer;
     use super::Secp256k1PrivateKey;
     use super::Secp256k1PublicKey;
 
@@ -363,6 +364,27 @@ mod secp256k1_test {
         assert_eq!(priv_key.as_hex(), KEY1_PRIV_HEX);
 
         let signer = factory.new_signer(&priv_key);
+        let signature = signer.sign(&String::from(MSG1).into_bytes()).unwrap();
+        assert_eq!(signature, MSG1_KEY1_SIG);
+    }
+
+    fn create_signer() -> Signer<'static> {
+        let context = create_context("secp256k1").unwrap();
+        assert_eq!(context.get_algorithm_name(), "secp256k1");
+
+        let factory = CryptoFactory::new(&*context);
+        assert_eq!(factory.get_context().get_algorithm_name(), "secp256k1");
+
+        let priv_key = Secp256k1PrivateKey::from_hex(KEY1_PRIV_HEX).unwrap();
+        assert_eq!(priv_key.get_algorithm_name(), "secp256k1");
+        assert_eq!(priv_key.as_hex(), KEY1_PRIV_HEX);
+
+        Signer::new_boxed(context, Box::new(priv_key))
+    }
+
+    #[test]
+    fn single_key_signing_return_from_func() {
+        let signer = create_signer();
         let signature = signer.sign(&String::from(MSG1).into_bytes()).unwrap();
         assert_eq!(signature, MSG1_KEY1_SIG);
     }
