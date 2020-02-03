@@ -244,6 +244,35 @@ impl<'a> Signer<'a> {
     }
 }
 
+fn hex_str_to_bytes(s: &str) -> Result<Vec<u8>, Error> {
+    for (i, ch) in s.chars().enumerate() {
+        if !ch.is_digit(16) {
+            return Err(Error::ParseError(format!(
+                "invalid character position {}",
+                i
+            )));
+        }
+    }
+
+    let input: Vec<_> = s.chars().collect();
+
+    let decoded: Vec<u8> = input
+        .chunks(2)
+        .map(|chunk| {
+            ((chunk[0].to_digit(16).unwrap() << 4) | (chunk[1].to_digit(16).unwrap())) as u8
+        })
+        .collect();
+
+    Ok(decoded)
+}
+
+fn bytes_to_hex_str(b: &[u8]) -> String {
+    b.iter()
+        .map(|b| format!("{:02x}", b))
+        .collect::<Vec<_>>()
+        .join("")
+}
+
 #[cfg(test)]
 mod signing_test {
     use super::create_context;
