@@ -25,6 +25,8 @@ extern crate openssl;
 extern crate protobuf;
 extern crate rand;
 extern crate secp256k1;
+#[cfg(feature = "transact-compat")]
+extern crate transact;
 extern crate uuid;
 extern crate zmq;
 

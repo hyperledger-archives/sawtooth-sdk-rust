@@ -30,10 +30,13 @@ default = ["pem"]
 
 stable = ["default"]
 
-experimental = []
+experimental = [
+    "transact-compat",
+]
 
 # Add support for loading PEM encoded private keys
 pem = ["openssl"]
+transact-compat = ["transact"]
 
 [dependencies]
 hex = "0.3"
@@ -47,6 +50,7 @@ log = "0.3"
 libc = "0.2"
 ctrlc = { version = "3.0", features = ["termination"] }
 openssl = { version = "0.10", optional = true }
+transact = { version = "0.2", optional = true }
 
 [dev-dependencies]
 env_logger = "0.3"
