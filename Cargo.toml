@@ -58,3 +58,9 @@ env_logger = "0.3"
 [build-dependencies]
 protoc-rust = "2.0"
 glob = "0.2"
+
+[package.metadata.docs.rs]
+features = [
+  "stable",
+  "experimental"
+]
