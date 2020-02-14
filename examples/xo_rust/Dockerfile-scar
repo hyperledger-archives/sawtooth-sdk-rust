@@ -81,4 +81,4 @@ RUN cp target/wasm32-unknown-unknown/release/xo-tp-rust.wasm \
 WORKDIR /build/examples/xo_rust/packaging/scar
 
 # Create .scar file
-RUN tar -jcvf /tmp/xo_0.4.1.scar .
+RUN tar -jcvf /tmp/xo_0.4.2.scar .
