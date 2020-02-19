@@ -1,5 +1,9 @@
 # Release Notes
 
+## Changes in Sawtooth Rust SDK 0.4.2
+
+* Remove pike and sabre smart permissions namespace from xo manifest
+
 ## Changes in Sawtooth Rust SDK 0.4.1
 
 ### Highlights
