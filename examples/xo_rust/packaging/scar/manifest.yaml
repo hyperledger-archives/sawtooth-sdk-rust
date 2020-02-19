@@ -15,10 +15,6 @@
 name: sawtooth_xo
 version: '1.0'
 inputs:
-  - '00ec03'
-  - 'cad11d'
   - '5b7349'
 outputs:
-  - '00ec03'
-  - 'cad11d'
   - '5b7349'
