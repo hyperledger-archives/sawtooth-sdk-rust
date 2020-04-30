@@ -15,18 +15,30 @@
  * ------------------------------------------------------------------------------
  */
 
+//! Provides an implementation of the [`transact`] library's [`Signer`] trait, backed by the
+//! Sawtooth SDK's own [`Signer`](../struct.signer.html) struct.
+//!
+//! [`transact`]: ../../../transact/index.html
+//! [`Signer`]: ../../../transact/signing/trait.Signer.html
+
 use std::convert::TryFrom;
 
 use transact::signing::Error as TransactSigningError;
 
 use super::{hex_str_to_bytes, Error, PublicKey, Signer};
 
+/// Provides an implementation of the [`transact`] library's [`Signer`] trait, backed by the
+/// Sawtooth SDK's own [`Signer`](../struct.signer.html) struct.
+///
+/// [`transact`]: ../../../transact/index.html
+/// [`Signer`]: ../../../transact/signing/trait.Signer.html
 pub struct TransactSigner {
     inner_signer: Signer<'static>,
     public_key: Box<dyn PublicKey>,
 }
 
 impl TransactSigner {
+    /// Construct a new `TransactSigner`.
     pub fn new(inner_signer: Signer<'static>) -> Result<Self, Error> {
         let public_key = inner_signer.get_public_key()?;
         Ok(Self {
