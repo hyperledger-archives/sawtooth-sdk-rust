@@ -1,5 +1,9 @@
 # Release Notes
 
+## Changes in Sawtooth Rust SDK 0.4.3
+
+* Stabilize the "transact-compat" feature
+
 ## Changes in Sawtooth Rust SDK 0.4.2
 
 * Remove pike and sabre smart permissions namespace from xo manifest
