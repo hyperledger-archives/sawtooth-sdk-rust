@@ -1,5 +1,10 @@
 # Release Notes
 
+## Changes in Sawtooth Rust SDK 0.4.3
+
+* Stabilize the "transact-compat" feature by moving the feature flag from the
+  "experimental" feature group to the "stable" feature group in the Cargo.toml
+
 ## Changes in Sawtooth Rust SDK 0.4.2
 
 * Remove pike and sabre smart permissions namespace from xo manifest
