@@ -28,11 +28,12 @@ documentation = "https://sawtooth.hyperledger.org/docs/core/releases/latest/"
 [features]
 default = ["pem"]
 
-stable = ["default"]
-
-experimental = [
+stable = [
+    "default",
     "transact-compat",
 ]
+
+experimental = []
 
 # Add support for loading PEM encoded private keys
 pem = ["openssl"]
