@@ -1,9 +1,13 @@
 # Release Notes
 
-## Changes in Sawtooth Rust SDK 0.4.3
+## Changes in Sawtooth Rust SDK 0.4.4
 
 * Stabilize the "transact-compat" feature by moving the feature flag from the
   "experimental" feature group to the "stable" feature group in the Cargo.toml
+
+## Changes in Sawtooth Rust SDK 0.4.3
+
+* Unreleased version
 
 ## Changes in Sawtooth Rust SDK 0.4.2
 
