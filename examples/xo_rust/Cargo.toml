@@ -45,3 +45,14 @@ rust-crypto = "0.2"
 sawtooth-sdk = { path = "../.." }
 log = "0.4"
 log4rs = "0.8"
+
+[features]
+default = []
+
+stable = []
+
+experimental = [
+    # The experimental feature extends stable:
+    "stable",
+    # The following features are experimental:
+]
