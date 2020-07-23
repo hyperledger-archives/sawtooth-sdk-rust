@@ -225,7 +225,7 @@ impl<'a> TransactionProcessor<'a> {
                             }
                         };
 
-                        info!("Message: {}", message.get_correlation_id());
+                        trace!("Message: {}", message.get_correlation_id());
 
                         match message.get_message_type() {
                             Message_MessageType::TP_PROCESS_REQUEST => {
@@ -300,7 +300,7 @@ impl<'a> TransactionProcessor<'a> {
                                 };
                             }
                             Message_MessageType::PING_REQUEST => {
-                                info!("sending PingResponse");
+                                trace!("sending PingResponse");
                                 let response = PingResponse::new();
                                 let serialized = match response.write_to_bytes() {
                                     Ok(serialized) => serialized,
