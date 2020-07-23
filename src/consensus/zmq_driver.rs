@@ -30,6 +30,7 @@ use messaging::stream::SendError;
 use messaging::zmq_stream::{ZmqMessageConnection, ZmqMessageSender};
 
 use messages::consensus::*;
+use messages::network::PingResponse;
 use messages::validator::{Message, Message_MessageType};
 
 use std::sync::mpsc::{self, channel, Receiver, RecvTimeoutError, Sender};
@@ -144,6 +145,9 @@ fn driver_loop(
                     "Unexpected error while receiving: {}",
                     err
                 )));
+            }
+            Ok(Ok(msg)) if msg.get_message_type() == Message_MessageType::PING_REQUEST => {
+                send_ping_reply(&mut validator_sender, msg.get_correlation_id())?;
             }
             Ok(Ok(msg)) => {
                 if let Err(err) = handle_update(&msg, &mut validator_sender, &mut update_sender) {
@@ -374,6 +378,19 @@ fn handle_update(
     Ok(())
 }
 
+fn send_ping_reply(
+    validator_sender: &mut dyn MessageSender,
+    correlation_id: &str,
+) -> Result<(), Error> {
+    trace!("sending PingResponse");
+    validator_sender.reply(
+        Message_MessageType::PING_RESPONSE,
+        correlation_id,
+        &PingResponse::new().write_to_bytes()?,
+    )?;
+    Ok(())
+}
+
 fn protocols_from_tuples(
     protocols: Vec<(String, String)>,
 ) -> Vec<ConsensusRegisterRequest_Protocol> {
@@ -461,6 +478,7 @@ impl From<ReceiveError> for Error {
 mod tests {
     use super::*;
     use consensus::engine::tests::MockEngine;
+    use messages::network::PingRequest;
     use std::sync::{Arc, Mutex};
     use zmq;
 
@@ -608,6 +626,14 @@ mod tests {
             ConsensusNotifyBlockCommit::new(),
             Message_MessageType::CONSENSUS_NOTIFY_BLOCK_COMMIT,
             Message_MessageType::CONSENSUS_NOTIFY_ACK,
+        );
+
+        let _: PingResponse = send_req_rep(
+            &connection_id,
+            &socket,
+            PingRequest::new(),
+            Message_MessageType::PING_REQUEST,
+            Message_MessageType::PING_RESPONSE,
         );
 
         // Shut it down
