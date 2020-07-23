@@ -14,8 +14,6 @@
  * limitations under the License.
  * -----------------------------------------------------------------------------
  */
-use uuid;
-use zmq;
 
 use std::collections::HashMap;
 use std::sync::mpsc::{channel, sync_channel, Receiver, RecvTimeoutError, Sender, SyncSender};
@@ -25,7 +23,6 @@ use std::time::Duration;
 
 use crate::messages::validator::Message;
 use crate::messages::validator::Message_MessageType;
-use protobuf;
 
 use crate::messaging::stream::*;
 

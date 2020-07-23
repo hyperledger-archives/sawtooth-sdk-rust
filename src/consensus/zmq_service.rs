@@ -15,8 +15,6 @@
  * ------------------------------------------------------------------------------
  */
 
-use protobuf;
-use rand;
 use rand::Rng;
 
 use crate::consensus::engine::*;

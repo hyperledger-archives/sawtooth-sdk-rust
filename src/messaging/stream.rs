@@ -16,7 +16,6 @@
  */
 use crate::messages::validator::Message;
 use crate::messages::validator::Message_MessageType;
-use std;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::RecvError;
 use std::time::Duration;

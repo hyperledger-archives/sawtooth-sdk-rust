@@ -15,9 +15,7 @@
  * ------------------------------------------------------------------------------
  */
 
-use protobuf;
 use protobuf::{Message as ProtobufMessage, ProtobufError, RepeatedField};
-use rand;
 use rand::Rng;
 
 use crate::consensus::engine::*;

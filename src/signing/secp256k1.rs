@@ -27,7 +27,6 @@ use openssl::{
 };
 use rand::os::OsRng;
 use rand::Rng;
-use secp256k1;
 
 use crate::signing::bytes_to_hex_str;
 use crate::signing::hex_str_to_bytes;

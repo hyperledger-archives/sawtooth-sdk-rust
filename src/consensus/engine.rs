@@ -19,8 +19,6 @@ use std::error;
 use std::fmt;
 use std::sync::mpsc::Receiver;
 
-use hex;
-
 use crate::consensus::service::Service;
 
 /// An update from the validator

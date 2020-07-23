@@ -22,7 +22,6 @@ extern crate protobuf;
 extern crate rand;
 extern crate zmq;
 
-use std;
 use std::collections::HashMap;
 use std::error::Error as StdError;
 
