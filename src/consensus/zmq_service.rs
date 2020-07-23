@@ -19,14 +19,14 @@ use protobuf;
 use rand;
 use rand::Rng;
 
-use consensus::engine::*;
-use consensus::service::Service;
+use crate::consensus::engine::*;
+use crate::consensus::service::Service;
 
-use messaging::stream::MessageSender;
-use messaging::zmq_stream::ZmqMessageSender;
+use crate::messaging::stream::MessageSender;
+use crate::messaging::zmq_stream::ZmqMessageSender;
 
-use messages::consensus::*;
-use messages::validator::Message_MessageType;
+use crate::messages::consensus::*;
+use crate::messages::validator::Message_MessageType;
 
 use std::collections::HashMap;
 use std::time::Duration;
@@ -379,9 +379,9 @@ impl Service for ZmqService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use messages::validator::Message;
-    use messaging::stream::MessageConnection;
-    use messaging::zmq_stream::ZmqMessageConnection;
+    use crate::messages::validator::Message;
+    use crate::messaging::stream::MessageConnection;
+    use crate::messaging::zmq_stream::ZmqMessageConnection;
     use protobuf::Message as ProtobufMessage;
     use std::default::Default;
     use std::thread;

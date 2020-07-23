@@ -14,8 +14,8 @@
  * limitations under the License.
  * -----------------------------------------------------------------------------
  */
-use messages::validator::Message;
-use messages::validator::Message_MessageType;
+use crate::messages::validator::Message;
+use crate::messages::validator::Message_MessageType;
 use std;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::RecvError;
@@ -152,8 +152,8 @@ mod tests {
     use std::sync::mpsc::channel;
     use std::thread;
 
-    use messages::validator::Message;
-    use messages::validator::Message_MessageType;
+    use crate::messages::validator::Message;
+    use crate::messages::validator::Message_MessageType;
 
     use super::MessageFuture;
 

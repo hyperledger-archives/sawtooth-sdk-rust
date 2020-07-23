@@ -26,9 +26,9 @@ use std;
 use std::collections::HashMap;
 use std::error::Error as StdError;
 
-use messages::processor::TpProcessRequest;
-use messaging::stream::ReceiveError;
-use messaging::stream::SendError;
+use crate::messages::processor::TpProcessRequest;
+use crate::messaging::stream::ReceiveError;
+use crate::messaging::stream::SendError;
 
 #[derive(Debug)]
 pub enum ApplyError {

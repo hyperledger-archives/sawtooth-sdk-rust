@@ -23,11 +23,11 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-use messages::validator::Message;
-use messages::validator::Message_MessageType;
+use crate::messages::validator::Message;
+use crate::messages::validator::Message_MessageType;
 use protobuf;
 
-use messaging::stream::*;
+use crate::messaging::stream::*;
 
 /// A MessageConnection over ZMQ sockets
 pub struct ZmqMessageConnection {

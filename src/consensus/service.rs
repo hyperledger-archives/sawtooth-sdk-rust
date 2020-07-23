@@ -15,7 +15,7 @@
  * ------------------------------------------------------------------------------
  */
 
-use consensus::engine::{Block, BlockId, Error, PeerId};
+use crate::consensus::engine::{Block, BlockId, Error, PeerId};
 use std::collections::HashMap;
 
 /// Provides methods that allow the consensus engine to issue commands and requests.

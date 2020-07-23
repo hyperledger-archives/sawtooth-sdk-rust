@@ -21,7 +21,7 @@ use std::sync::mpsc::Receiver;
 
 use hex;
 
-use consensus::service::Service;
+use crate::consensus::service::Service;
 
 /// An update from the validator
 #[derive(Debug)]
@@ -191,7 +191,7 @@ pub mod tests {
     use std::thread;
     use std::time::Duration;
 
-    use consensus::service::tests::MockService;
+    use crate::consensus::service::tests::MockService;
 
     pub struct MockEngine {
         calls: Arc<Mutex<Vec<String>>>,
