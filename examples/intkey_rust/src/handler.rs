@@ -188,7 +188,7 @@ impl<'a> IntkeyState<'a> {
                 let map_value = decoder
                     .value()
                     .map_err(|err| ApplyError::InternalError(format!("{}", err)))?;
-                let mut map = match map_value {
+                let map = match map_value {
                     Value::Map(m) => m,
                     _ => {
                         return Err(ApplyError::InternalError(String::from(
@@ -208,7 +208,7 @@ impl<'a> IntkeyState<'a> {
                     },
                     None => Ok(None),
                 };
-                self.get_cache.insert(address, map.clone());
+                self.get_cache.insert(address, map);
                 status
             }
             None => Ok(None),
@@ -249,7 +249,7 @@ impl IntkeyTransactionHandler {
         IntkeyTransactionHandler {
             family_name: "intkey".to_string(),
             family_versions: vec!["1.0".to_string()],
-            namespaces: vec![get_intkey_prefix().to_string()],
+            namespaces: vec![get_intkey_prefix()],
         }
     }
 }
