@@ -23,7 +23,6 @@ extern crate rand;
 extern crate zmq;
 
 use std;
-use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::error::Error as StdError;
 
@@ -39,21 +38,7 @@ pub enum ApplyError {
     InternalError(String),
 }
 
-impl std::error::Error for ApplyError {
-    fn description(&self) -> &str {
-        match *self {
-            ApplyError::InvalidTransaction(ref msg) => msg,
-            ApplyError::InternalError(ref msg) => msg,
-        }
-    }
-
-    fn cause(&self) -> Option<&dyn std::error::Error> {
-        match *self {
-            ApplyError::InvalidTransaction(_) => None,
-            ApplyError::InternalError(_) => None,
-        }
-    }
-}
+impl std::error::Error for ApplyError {}
 
 impl std::fmt::Display for ApplyError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -81,25 +66,12 @@ pub enum ContextError {
 }
 
 impl std::error::Error for ContextError {
-    fn description(&self) -> &str {
-        match *self {
-            ContextError::AuthorizationError(ref msg) => msg,
-            ContextError::ResponseAttributeError(ref msg) => msg,
-            ContextError::TransactionReceiptError(ref msg) => msg,
-            ContextError::SerializationError(ref err) => err.description(),
-            ContextError::SendError(ref err) => err.description(),
-            ContextError::ReceiveError(ref err) => err.description(),
-        }
-    }
-
-    fn cause(&self) -> Option<&dyn std::error::Error> {
-        match *self {
-            ContextError::AuthorizationError(_) => None,
-            ContextError::ResponseAttributeError(_) => None,
-            ContextError::TransactionReceiptError(_) => None,
-            ContextError::SerializationError(ref err) => Some(err.borrow()),
-            ContextError::SendError(ref err) => Some(err.borrow()),
-            ContextError::ReceiveError(ref err) => Some(err.borrow()),
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            ContextError::SerializationError(err) => Some(&**err),
+            ContextError::SendError(err) => Some(&**err),
+            ContextError::ReceiveError(err) => Some(&**err),
+            _ => None,
         }
     }
 }
@@ -114,11 +86,9 @@ impl std::fmt::Display for ContextError {
             ContextError::TransactionReceiptError(ref s) => {
                 write!(f, "TransactionReceiptError: {}", s)
             }
-            ContextError::SerializationError(ref err) => {
-                write!(f, "SerializationError: {}", err.description())
-            }
-            ContextError::SendError(ref err) => write!(f, "SendError: {}", err.description()),
-            ContextError::ReceiveError(ref err) => write!(f, "ReceiveError: {}", err.description()),
+            ContextError::SerializationError(ref err) => write!(f, "SerializationError: {}", err),
+            ContextError::SendError(ref err) => write!(f, "SendError: {}", err),
+            ContextError::ReceiveError(ref err) => write!(f, "ReceiveError: {}", err),
         }
     }
 }

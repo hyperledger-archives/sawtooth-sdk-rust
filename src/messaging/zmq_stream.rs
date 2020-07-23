@@ -18,7 +18,6 @@ use uuid;
 use zmq;
 
 use std::collections::HashMap;
-use std::error::Error;
 use std::sync::mpsc::{channel, sync_channel, Receiver, RecvTimeoutError, Sender, SyncSender};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -196,7 +195,7 @@ impl InboundRouter {
                     .send(Err(ReceiveError::DisconnectedError))
                     .unwrap_or_else(|err| error!("Failed to send disconnect: {}", err));
             }
-            Err(err) => error!("Error: {}", err.description()),
+            Err(err) => error!("Error: {}", err),
         }
     }
 

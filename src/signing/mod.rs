@@ -20,7 +20,6 @@ pub mod secp256k1;
 pub mod transact;
 
 use std;
-use std::borrow::Borrow;
 use std::error::Error as StdError;
 
 #[derive(Debug)]
@@ -37,21 +36,10 @@ pub enum Error {
 }
 
 impl StdError for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::NoSuchAlgorithm(ref msg) => msg,
-            Error::ParseError(ref msg) => msg,
-            Error::SigningError(ref err) => err.description(),
-            Error::KeyGenError(ref msg) => msg,
-        }
-    }
-
-    fn cause(&self) -> Option<&dyn StdError> {
-        match *self {
-            Error::NoSuchAlgorithm(_) => None,
-            Error::ParseError(_) => None,
-            Error::SigningError(ref err) => Some(err.borrow()),
-            Error::KeyGenError(_) => None,
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        match self {
+            Error::SigningError(err) => Some(&**err),
+            _ => None,
         }
     }
 }
@@ -61,7 +49,7 @@ impl std::fmt::Display for Error {
         match *self {
             Error::NoSuchAlgorithm(ref s) => write!(f, "NoSuchAlgorithm: {}", s),
             Error::ParseError(ref s) => write!(f, "ParseError: {}", s),
-            Error::SigningError(ref err) => write!(f, "SigningError: {}", err.description()),
+            Error::SigningError(ref err) => write!(f, "SigningError: {}", err),
             Error::KeyGenError(ref s) => write!(f, "KeyGenError: {}", s),
         }
     }
