@@ -48,6 +48,12 @@ impl XoTransactionHandler {
     }
 }
 
+impl Default for XoTransactionHandler {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TransactionHandler for XoTransactionHandler {
     fn family_name(&self) -> String {
         self.family_name.clone()

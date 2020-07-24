@@ -14,21 +14,17 @@
  * limitations under the License.
  * -----------------------------------------------------------------------------
  */
-use uuid;
-use zmq;
 
 use std::collections::HashMap;
-use std::error::Error;
 use std::sync::mpsc::{channel, sync_channel, Receiver, RecvTimeoutError, Sender, SyncSender};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-use messages::validator::Message;
-use messages::validator::Message_MessageType;
-use protobuf;
+use crate::messages::validator::Message;
+use crate::messages::validator::Message_MessageType;
 
-use messaging::stream::*;
+use crate::messaging::stream::*;
 
 /// A MessageConnection over ZMQ sockets
 pub struct ZmqMessageConnection {
@@ -196,7 +192,7 @@ impl InboundRouter {
                     .send(Err(ReceiveError::DisconnectedError))
                     .unwrap_or_else(|err| error!("Failed to send disconnect: {}", err));
             }
-            Err(err) => error!("Error: {}", err.description()),
+            Err(err) => error!("Error: {}", err),
         }
     }
 

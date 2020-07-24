@@ -1,5 +1,6 @@
 /*
  * Copyright 2017 Intel Corporation
+ * Copyright 2020 Cargill Incorporated
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,16 +57,18 @@ fn main() {
         .write_all(mod_file_content.as_bytes())
         .expect("Unable to write mod file");
 
-    protoc_rust::run(protoc_rust::Args {
-        out_dir: &dest_path.to_str().expect("Invalid proto destination path"),
-        input: &proto_src_files
-            .iter()
-            .map(|a| a.as_ref())
-            .collect::<Vec<&str>>(),
-        includes: &["src", "./protos"],
-        customize: Customize::default(),
-    })
-    .expect("unable to run protoc");
+    protoc_rust::Codegen::new()
+        .out_dir(&dest_path.to_str().expect("Invalid proto destination path"))
+        .inputs(
+            &proto_src_files
+                .iter()
+                .map(|a| a.as_ref())
+                .collect::<Vec<&str>>(),
+        )
+        .includes(&["src", "protos"])
+        .customize(Customize::default())
+        .run()
+        .expect("unable to run protoc");
 }
 
 fn glob_simple(pattern: &str) -> Vec<String> {

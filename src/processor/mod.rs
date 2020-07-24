@@ -22,7 +22,6 @@ extern crate protobuf;
 extern crate rand;
 extern crate zmq;
 
-use std::error::Error;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::RecvTimeoutError;
 use std::sync::Arc;
@@ -33,19 +32,19 @@ use self::rand::Rng;
 pub mod handler;
 mod zmq_context;
 
-use messages::network::PingResponse;
-use messages::processor::TpProcessRequest;
-use messages::processor::TpProcessResponse;
-use messages::processor::TpProcessResponse_Status;
-use messages::processor::TpRegisterRequest;
-use messages::processor::TpUnregisterRequest;
-use messages::validator::Message_MessageType;
-use messaging::stream::MessageConnection;
-use messaging::stream::MessageSender;
-use messaging::stream::ReceiveError;
-use messaging::stream::SendError;
-use messaging::zmq_stream::ZmqMessageConnection;
-use messaging::zmq_stream::ZmqMessageSender;
+use crate::messages::network::PingResponse;
+use crate::messages::processor::TpProcessRequest;
+use crate::messages::processor::TpProcessResponse;
+use crate::messages::processor::TpProcessResponse_Status;
+use crate::messages::processor::TpRegisterRequest;
+use crate::messages::processor::TpUnregisterRequest;
+use crate::messages::validator::Message_MessageType;
+use crate::messaging::stream::MessageConnection;
+use crate::messaging::stream::MessageSender;
+use crate::messaging::stream::ReceiveError;
+use crate::messaging::stream::SendError;
+use crate::messaging::zmq_stream::ZmqMessageConnection;
+use crate::messaging::zmq_stream::ZmqMessageSender;
 use protobuf::Message as M;
 use protobuf::RepeatedField;
 
@@ -101,7 +100,7 @@ impl<'a> TransactionProcessor<'a> {
                 let serialized = match request.write_to_bytes() {
                     Ok(serialized) => serialized,
                     Err(err) => {
-                        error!("Serialization failed: {}", err.description());
+                        error!("Serialization failed: {}", err);
                         // try reconnect
                         return false;
                     }
@@ -115,7 +114,7 @@ impl<'a> TransactionProcessor<'a> {
                 ) {
                     Ok(fut) => fut,
                     Err(err) => {
-                        error!("Registration failed: {}", err.description());
+                        error!("Registration failed: {}", err);
                         // try reconnect
                         return false;
                     }
@@ -143,7 +142,7 @@ impl<'a> TransactionProcessor<'a> {
         let serialized = match request.write_to_bytes() {
             Ok(serialized) => serialized,
             Err(err) => {
-                error!("Serialization failed: {}", err.description());
+                error!("Serialization failed: {}", err);
                 return;
             }
         };
@@ -156,7 +155,7 @@ impl<'a> TransactionProcessor<'a> {
         ) {
             Ok(fut) => fut,
             Err(err) => {
-                error!("Unregistration failed: {}", err.description());
+                error!("Unregistration failed: {}", err);
                 return;
             }
         };
@@ -164,7 +163,7 @@ impl<'a> TransactionProcessor<'a> {
         match future.get_timeout(Duration::from_millis(1000)) {
             Ok(_) => (),
             Err(err) => {
-                info!("Unregistration failed: {}", err.description());
+                info!("Unregistration failed: {}", err);
             }
         };
     }
@@ -220,7 +219,7 @@ impl<'a> TransactionProcessor<'a> {
                                 break;
                             }
                             Err(err) => {
-                                error!("Error: {}", err.description());
+                                error!("Error: {}", err);
                                 continue;
                             }
                         };
@@ -233,10 +232,7 @@ impl<'a> TransactionProcessor<'a> {
                                     match protobuf::parse_from_bytes(&message.get_content()) {
                                         Ok(request) => request,
                                         Err(err) => {
-                                            error!(
-                                                "Cannot parse TpProcessRequest: {}",
-                                                err.description()
-                                            );
+                                            error!("Cannot parse TpProcessRequest: {}", err);
                                             continue;
                                         }
                                     };
@@ -265,18 +261,18 @@ impl<'a> TransactionProcessor<'a> {
                                     Err(err) => {
                                         info!(
                                             "TP_PROCESS_REQUEST sending TpProcessResponse: {}",
-                                            err.description()
+                                            err
                                         );
                                         response
                                             .set_status(TpProcessResponse_Status::INTERNAL_ERROR);
-                                        response.set_message(String::from(err.description()));
+                                        response.set_message(err.to_string());
                                     }
                                 };
 
                                 let serialized = match response.write_to_bytes() {
                                     Ok(serialized) => serialized,
                                     Err(err) => {
-                                        error!("Serialization failed: {}", err.description());
+                                        error!("Serialization failed: {}", err);
                                         continue;
                                     }
                                 };
@@ -305,7 +301,7 @@ impl<'a> TransactionProcessor<'a> {
                                 let serialized = match response.write_to_bytes() {
                                     Ok(serialized) => serialized,
                                     Err(err) => {
-                                        error!("Serialization failed: {}", err.description());
+                                        error!("Serialization failed: {}", err);
                                         continue;
                                     }
                                 };
@@ -337,7 +333,7 @@ impl<'a> TransactionProcessor<'a> {
                     }
                     Err(RecvTimeoutError::Timeout) => (),
                     Err(err) => {
-                        error!("Error: {}", err.description());
+                        error!("Error: {}", err);
                     }
                 }
             }

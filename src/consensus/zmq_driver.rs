@@ -15,23 +15,21 @@
  * ------------------------------------------------------------------------------
  */
 
-use protobuf;
 use protobuf::{Message as ProtobufMessage, ProtobufError, RepeatedField};
-use rand;
 use rand::Rng;
 
-use consensus::engine::*;
-use consensus::zmq_service::ZmqService;
+use crate::consensus::engine::*;
+use crate::consensus::zmq_service::ZmqService;
 
-use messaging::stream::MessageConnection;
-use messaging::stream::MessageSender;
-use messaging::stream::ReceiveError;
-use messaging::stream::SendError;
-use messaging::zmq_stream::{ZmqMessageConnection, ZmqMessageSender};
+use crate::messaging::stream::MessageConnection;
+use crate::messaging::stream::MessageSender;
+use crate::messaging::stream::ReceiveError;
+use crate::messaging::stream::SendError;
+use crate::messaging::zmq_stream::{ZmqMessageConnection, ZmqMessageSender};
 
-use messages::consensus::*;
-use messages::network::PingResponse;
-use messages::validator::{Message, Message_MessageType};
+use crate::messages::consensus::*;
+use crate::messages::network::PingResponse;
+use crate::messages::validator::{Message, Message_MessageType};
 
 use std::sync::mpsc::{self, channel, Receiver, RecvTimeoutError, Sender};
 use std::thread;
@@ -477,8 +475,8 @@ impl From<ReceiveError> for Error {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use consensus::engine::tests::MockEngine;
-    use messages::network::PingRequest;
+    use crate::consensus::engine::tests::MockEngine;
+    use crate::messages::network::PingRequest;
     use std::sync::{Arc, Mutex};
     use zmq;
 

@@ -19,9 +19,7 @@ use std::error;
 use std::fmt;
 use std::sync::mpsc::Receiver;
 
-use hex;
-
-use consensus::service::Service;
+use crate::consensus::service::Service;
 
 /// An update from the validator
 #[derive(Debug)]
@@ -163,35 +161,7 @@ pub enum Error {
     BlockNotReady,
 }
 
-impl error::Error for Error {
-    fn description(&self) -> &str {
-        use self::Error::*;
-        match *self {
-            EncodingError(ref s) => s,
-            SendError(ref s) => s,
-            ReceiveError(ref s) => s,
-            InvalidState(ref s) => s,
-            UnknownBlock(ref s) => s,
-            UnknownPeer(ref s) => s,
-            NoChainHead => "No chain head",
-            BlockNotReady => "Block not ready to finalize",
-        }
-    }
-
-    fn cause(&self) -> Option<&dyn error::Error> {
-        use self::Error::*;
-        match *self {
-            EncodingError(_) => None,
-            SendError(_) => None,
-            ReceiveError(_) => None,
-            InvalidState(_) => None,
-            UnknownBlock(_) => None,
-            UnknownPeer(_) => None,
-            NoChainHead => None,
-            BlockNotReady => None,
-        }
-    }
-}
+impl error::Error for Error {}
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -219,7 +189,7 @@ pub mod tests {
     use std::thread;
     use std::time::Duration;
 
-    use consensus::service::tests::MockService;
+    use crate::consensus::service::tests::MockService;
 
     pub struct MockEngine {
         calls: Arc<Mutex<Vec<String>>>,

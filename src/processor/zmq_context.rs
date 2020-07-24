@@ -19,13 +19,13 @@
 use protobuf::Message as M;
 use protobuf::RepeatedField;
 
-use messages::events::Event;
-use messages::events::Event_Attribute;
-use messages::state_context::*;
-use messages::validator::Message_MessageType;
-use messaging::stream::MessageSender;
-use messaging::zmq_stream::ZmqMessageSender;
-use processor::handler::{ContextError, TransactionContext};
+use crate::messages::events::Event;
+use crate::messages::events::Event_Attribute;
+use crate::messages::state_context::*;
+use crate::messages::validator::Message_MessageType;
+use crate::messaging::stream::MessageSender;
+use crate::messaging::zmq_stream::ZmqMessageSender;
+use crate::processor::handler::{ContextError, TransactionContext};
 
 use super::generate_correlation_id;
 

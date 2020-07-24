@@ -14,10 +14,8 @@
  * limitations under the License.
  * -----------------------------------------------------------------------------
  */
-use messages::validator::Message;
-use messages::validator::Message_MessageType;
-use std;
-use std::error::Error;
+use crate::messages::validator::Message;
+use crate::messages::validator::Message_MessageType;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::RecvError;
 use std::time::Duration;
@@ -64,23 +62,7 @@ pub enum SendError {
     UnknownError,
 }
 
-impl std::error::Error for SendError {
-    fn description(&self) -> &str {
-        match *self {
-            SendError::DisconnectedError => "DisconnectedError",
-            SendError::TimeoutError => "TimeoutError",
-            SendError::UnknownError => "UnknownError",
-        }
-    }
-
-    fn cause(&self) -> Option<&dyn std::error::Error> {
-        match *self {
-            SendError::DisconnectedError => None,
-            SendError::TimeoutError => None,
-            SendError::UnknownError => None,
-        }
-    }
-}
+impl std::error::Error for SendError {}
 
 impl std::fmt::Display for SendError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -101,19 +83,10 @@ pub enum ReceiveError {
 }
 
 impl std::error::Error for ReceiveError {
-    fn description(&self) -> &str {
-        match *self {
-            ReceiveError::TimeoutError => "TimeoutError",
-            ReceiveError::ChannelError(ref err) => err.description(),
-            ReceiveError::DisconnectedError => "DisconnectedError",
-        }
-    }
-
-    fn cause(&self) -> Option<&dyn std::error::Error> {
-        match *self {
-            ReceiveError::TimeoutError => None,
-            ReceiveError::ChannelError(ref err) => Some(err),
-            ReceiveError::DisconnectedError => None,
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            ReceiveError::ChannelError(err) => Some(&*err),
+            _ => None,
         }
     }
 }
@@ -122,7 +95,7 @@ impl std::fmt::Display for ReceiveError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match *self {
             ReceiveError::TimeoutError => write!(f, "TimeoutError"),
-            ReceiveError::ChannelError(ref err) => write!(f, "ChannelError: {}", err.description()),
+            ReceiveError::ChannelError(ref err) => write!(f, "ChannelError: {}", err),
             ReceiveError::DisconnectedError => write!(f, "DisconnectedError"),
         }
     }
@@ -178,8 +151,8 @@ mod tests {
     use std::sync::mpsc::channel;
     use std::thread;
 
-    use messages::validator::Message;
-    use messages::validator::Message_MessageType;
+    use crate::messages::validator::Message;
+    use crate::messages::validator::Message_MessageType;
 
     use super::MessageFuture;
 

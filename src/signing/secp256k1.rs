@@ -27,13 +27,13 @@ use openssl::{
 };
 use rand::os::OsRng;
 use rand::Rng;
-use secp256k1;
-use signing::bytes_to_hex_str;
-use signing::hex_str_to_bytes;
-use signing::Context;
-use signing::Error;
-use signing::PrivateKey;
-use signing::PublicKey;
+
+use crate::signing::bytes_to_hex_str;
+use crate::signing::hex_str_to_bytes;
+use crate::signing::Context;
+use crate::signing::Error;
+use crate::signing::PrivateKey;
+use crate::signing::PublicKey;
 
 impl From<secp256k1::Error> for Error {
     fn from(e: secp256k1::Error) -> Self {
