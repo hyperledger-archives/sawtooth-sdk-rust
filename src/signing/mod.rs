@@ -16,8 +16,6 @@
  */
 
 pub mod secp256k1;
-#[cfg(feature = "transact-compat")]
-pub mod transact;
 
 use std::error::Error as StdError;
 
