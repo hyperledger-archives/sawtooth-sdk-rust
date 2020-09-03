@@ -1,5 +1,14 @@
 # Release Notes
 
+## Changes in Sawtooth Rust SDK 0.5.0
+
+*  Remove `transact-compat` features. This feature provided a trait
+  implementation for the Transact signer trait for the sawtooth signer. The
+  trait was removed in the 0.3 release of Transact.
+
+* Add lib crate to Intkey smart contract so the transaction handler can be used
+  by Transact.
+
 ## Changes in Sawtooth Rust SDK 0.4.5
 
 * Add stable and experimental features to example Cargo.toml files
