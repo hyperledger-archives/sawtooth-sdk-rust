@@ -1,0 +1,61 @@
+# Copyright 2018-2020 Cargill Incorporated
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ------------------------------------------------------------------------------
+
+# Description:
+#   Builds an environment to publish the Sawtooth Rust SDK Intkey example to
+#   crates.io.
+#   Your crates api token must be passed in as CARGO_CRED at runtime
+#   using Docker's -e option.
+
+# docker build -f ci/sawtooth-publish-intkey-crates -t sawtooth-publish-intkey-crates ci/
+# docker run --rm -v $(pwd):/project/sawtooth-sdk-rust -e CARGO_CRED=%CREDVALUE% sawtooth-publish-intkey-crates
+
+FROM ubuntu:bionic
+
+RUN apt-get update \
+ && apt-get install -y \
+    curl \
+    git \
+    gcc \
+    libssl-dev \
+    libzmq3-dev \
+    pkg-config \
+    unzip \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN curl https://sh.rustup.rs -sSf > /usr/bin/rustup-init \
+ && chmod +x /usr/bin/rustup-init \
+ && rustup-init -y
+
+# Install protoc
+RUN curl -OLsS https://github.com/google/protobuf/releases/download/v3.7.1/protoc-3.7.1-linux-x86_64.zip \
+    && unzip -o protoc-3.7.1-linux-x86_64.zip -d /usr/local \
+    && rm protoc-3.7.1-linux-x86_64.zip
+
+ENV PATH=$PATH:/root/.cargo/bin
+
+WORKDIR /project/sawtooth-sdk-rust/examples/intkey_rust
+
+CMD cargo login $CARGO_CRED \
+ && rm -f Cargo.lock \
+ && SDK_VER=$(grep ^version ../../Cargo.toml |awk '{print $3}' | tr -d '"') \
+ && MINOR_VERSION=${SDK_VER%.*} \
+ && sed -i'' -e "s/sawtooth-sdk.*$/sawtooth-sdk\ =\ \"$MINOR_VERSION\"/" Cargo.toml \
+ && sed -i'' -e 's/name = "sawtooth-intkey-tp-rust"/name = "sawtooth-intkey"/' Cargo.toml \
+ && cargo clean \
+ && cargo test \
+ && cargo publish --allow-dirty \
+ && git checkout Cargo.toml
