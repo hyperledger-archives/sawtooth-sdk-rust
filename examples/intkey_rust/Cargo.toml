@@ -17,7 +17,7 @@
 
 [package]
 name = "sawtooth-intkey-tp-rust"
-version = "0.4.6"
+version = "0.5.0"
 authors = ["Bitwise IO, Inc."]
 
 [[bin]]
