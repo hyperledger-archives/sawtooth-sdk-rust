@@ -46,4 +46,5 @@ services:
         - http_proxy
         - https_proxy
         - no_proxy
+        - REPO_VERSION=${REPO_VERSION}
     image: xo-scar:${ISOLATION_ID}
