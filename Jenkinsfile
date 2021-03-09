@@ -103,7 +103,7 @@ pipeline {
 
         stage('Build/archive artifacts') {
             steps {
-                sh 'docker-compose -f docker-compose-installed.yaml build'
+                sh 'REPO_VERSION=$(VERSION=AUTO_STRICT ./bin/get_version) docker-compose -f docker-compose-installed.yaml build'
                 sh 'docker-compose -f docker/compose/copy-debs.yaml up'
             }
         }
