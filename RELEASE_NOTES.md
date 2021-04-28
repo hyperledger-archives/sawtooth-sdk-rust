@@ -1,5 +1,9 @@
 # Release Notes
 
+## Changes in Sawtooth Rust SDK 0.5.1
+
+* Rename `sawtooth_xo` to `xo` for Transact compatibility.
+
 ## Changes in Sawtooth Rust SDK 0.5.0
 
 *  Remove `transact-compat` features. This feature provided a trait
