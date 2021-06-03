@@ -48,8 +48,8 @@ use crate::messaging::zmq_stream::ZmqMessageSender;
 use protobuf::Message as M;
 use protobuf::RepeatedField;
 
-use self::handler::ApplyError;
 use self::handler::TransactionHandler;
+use self::handler::{ApplyError, TransactionContext};
 use self::zmq_context::ZmqTransactionContext;
 
 /// Generates a random correlation id for use in Message
@@ -83,6 +83,11 @@ impl<'a> TransactionProcessor<'a> {
     /// * handler - the handler to be added
     pub fn add_handler(&mut self, handler: &'a dyn TransactionHandler) {
         self.handlers.push(handler);
+    }
+
+    pub fn empty_context(&self) -> Box<dyn TransactionContext + Send> {
+        let (sender, _) = self.conn.create();
+        Box::new(ZmqTransactionContext::new("", sender))
     }
 
     fn register(&mut self, sender: &ZmqMessageSender, unregister: &Arc<AtomicBool>) -> bool {
