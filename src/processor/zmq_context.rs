@@ -19,6 +19,12 @@
 use protobuf::Message as M;
 use protobuf::RepeatedField;
 
+use crate::messages::block::BlockHeader;
+use crate::messages::client_block::{
+    ClientBlockGetByNumRequest, ClientBlockGetResponse, ClientBlockGetResponse_Status,
+    ClientRewardBlockListRequest, ClientRewardBlockListResponse,
+    ClientRewardBlockListResponse_Status,
+};
 use crate::messages::client_state::{
     ClientStateListRequest, ClientStateListResponse, ClientStateListResponse_Status,
 };
@@ -272,6 +278,77 @@ impl TransactionContext for ZmqTransactionContext {
             )),
         }
     }
+
+    fn get_sig_by_num(&self, block_num: u64) -> Result<String, ContextError> {
+        let mut request = ClientBlockGetByNumRequest::new();
+
+        request.set_block_num(block_num);
+
+        let serialized = request.write_to_bytes()?;
+
+        let mut future = self.sender.send(
+            Message_MessageType::CLIENT_BLOCK_GET_BY_NUM_REQUEST,
+            &generate_correlation_id(),
+            &serialized,
+        )?;
+
+        let response = ClientBlockGetResponse::parse_from_bytes(future.get()?.get_content())?;
+        match response.get_status() {
+            ClientBlockGetResponse_Status::OK => {
+                let raw_header = &response.get_block().header;
+                let header = BlockHeader::parse_from_bytes(raw_header)?;
+
+                Ok(header.signer_public_key)
+            }
+            err_status => Err(ContextError::ResponseAttributeError(format!(
+                "Failed to retrieve block by num : {:?}",
+                err_status
+            ))),
+        }
+    }
+
+    fn get_reward_block_signatures(
+        &self,
+        block_id: &str,
+        first_pred: u64,
+        last_pred: u64,
+    ) -> Result<Vec<String>, ContextError> {
+        let mut request = ClientRewardBlockListRequest::new();
+
+        request.set_head_id(block_id.into());
+        request.set_first_predecessor_height(first_pred);
+        request.set_last_predecessor_height(last_pred);
+
+        let serialized = request.write_to_bytes()?;
+
+        let mut future = self.sender.send(
+            Message_MessageType::CLIENT_REWARD_BLOCK_LIST_REQUEST,
+            &generate_correlation_id(),
+            &serialized,
+        )?;
+
+        let response =
+            ClientRewardBlockListResponse::parse_from_bytes(future.get()?.get_content())?;
+        match response.get_status() {
+            ClientRewardBlockListResponse_Status::OK => {
+                let blocks = response.get_blocks();
+                let mut signatures = Vec::with_capacity(blocks.len());
+                for block in blocks {
+                    let raw_header = &block.header;
+                    let header = BlockHeader::parse_from_bytes(&raw_header)?;
+
+                    signatures.push(header.signer_public_key);
+                }
+
+                Ok(signatures)
+            }
+            err_status => Err(ContextError::ResponseAttributeError(format!(
+                "Failed to retrieve Reward Block List : {:?}",
+                err_status
+            ))),
+        }
+    }
+
     fn get_state_entries_by_prefix(
         &self,
         address: &str,

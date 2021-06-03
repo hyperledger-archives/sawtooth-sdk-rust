@@ -261,6 +261,15 @@ pub trait TransactionContext {
         data: &[u8],
     ) -> Result<(), ContextError>;
 
+    fn get_sig_by_num(&self, block_num: u64) -> Result<String, ContextError>;
+
+    fn get_reward_block_signatures(
+        &self,
+        block_id: &str,
+        first_pred: u64,
+        last_pred: u64,
+    ) -> Result<Vec<String>, ContextError>;
+
     fn get_state_entries_by_prefix(
         &self,
         address: &str,
