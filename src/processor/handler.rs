@@ -260,6 +260,11 @@ pub trait TransactionContext {
         attributes: Vec<(String, String)>,
         data: &[u8],
     ) -> Result<(), ContextError>;
+
+    fn get_state_entries_by_prefix(
+        &self,
+        address: &str,
+    ) -> Result<Vec<(String, Vec<u8>)>, ContextError>;
 }
 
 pub trait TransactionHandler {

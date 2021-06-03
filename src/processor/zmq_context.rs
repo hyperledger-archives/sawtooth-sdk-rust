@@ -19,6 +19,9 @@
 use protobuf::Message as M;
 use protobuf::RepeatedField;
 
+use crate::messages::client_state::{
+    ClientStateListRequest, ClientStateListResponse, ClientStateListResponse_Status,
+};
 use crate::messages::events::Event;
 use crate::messages::events::Event_Attribute;
 use crate::messages::state_context::*;
@@ -267,6 +270,55 @@ impl TransactionContext for ZmqTransactionContext {
             TpEventAddResponse_Status::STATUS_UNSET => Err(ContextError::ResponseAttributeError(
                 String::from("Status was not set for TpEventAddRespons"),
             )),
+        }
+    }
+    fn get_state_entries_by_prefix(
+        &self,
+        address: &str,
+    ) -> Result<Vec<(String, Vec<u8>)>, ContextError> {
+        let mut start = String::new();
+        let mut root = String::new();
+
+        let mut entries = Vec::new();
+
+        loop {
+            let mut request = ClientStateListRequest::new();
+
+            request.set_state_root(root.clone());
+            request.mut_paging().set_start(start.clone());
+            request.mut_paging().set_limit(100);
+            request.set_address(address.into());
+
+            let serialized = request.write_to_bytes()?;
+
+            let mut future = self.sender.send(
+                Message_MessageType::CLIENT_STATE_LIST_REQUEST,
+                &generate_correlation_id(),
+                &serialized,
+            )?;
+
+            let mut response =
+                ClientStateListResponse::parse_from_bytes(future.get()?.get_content())?;
+            match response.get_status() {
+                ClientStateListResponse_Status::OK => {
+                    root = response.take_state_root();
+                    start = response.mut_paging().take_next();
+                    entries.reserve(response.get_entries().len());
+
+                    for mut entry in response.take_entries() {
+                        entries.push((entry.take_address(), entry.take_data()));
+                    }
+                }
+                err_status => {
+                    return Err(ContextError::ResponseAttributeError(format!(
+                        "Failed to retrieve state entries : {:?}",
+                        err_status
+                    )))
+                }
+            }
+            if start.is_empty() {
+                return Ok(entries);
+            }
         }
     }
 }
