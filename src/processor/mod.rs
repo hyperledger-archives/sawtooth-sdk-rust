@@ -228,14 +228,15 @@ impl<'a> TransactionProcessor<'a> {
 
                         match message.get_message_type() {
                             Message_MessageType::TP_PROCESS_REQUEST => {
-                                let request: TpProcessRequest =
-                                    match protobuf::parse_from_bytes(&message.get_content()) {
-                                        Ok(request) => request,
-                                        Err(err) => {
-                                            error!("Cannot parse TpProcessRequest: {}", err);
-                                            continue;
-                                        }
-                                    };
+                                let request = match TpProcessRequest::parse_from_bytes(
+                                    &message.get_content(),
+                                ) {
+                                    Ok(request) => request,
+                                    Err(err) => {
+                                        error!("Cannot parse TpProcessRequest: {}", err);
+                                        continue;
+                                    }
+                                };
 
                                 let mut context = ZmqTransactionContext::new(
                                     request.get_context_id(),

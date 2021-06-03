@@ -263,7 +263,7 @@ impl SendReceiveStream {
                 if let Some(received_bytes) = received_parts.pop() {
                     trace!("Received {} bytes", received_bytes.len());
                     if !received_bytes.is_empty() {
-                        let message = protobuf::parse_from_bytes(&received_bytes).unwrap();
+                        let message = protobuf::Message::parse_from_bytes(&received_bytes).unwrap();
                         self.inbound_router.route(Ok(message));
                     }
                 } else {

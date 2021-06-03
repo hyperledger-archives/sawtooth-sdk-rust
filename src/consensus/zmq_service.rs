@@ -61,7 +61,7 @@ impl ZmqService {
         let msg = future.get_timeout(self.timeout)?;
         let msg_type = msg.get_message_type();
         if msg_type == response_type {
-            let response = protobuf::parse_from_bytes(msg.get_content())?;
+            let response = O::parse_from_bytes(msg.get_content())?;
             Ok(response)
         } else {
             Err(Error::ReceiveError(format!(
@@ -394,10 +394,10 @@ mod tests {
         let mut parts = socket.recv_multipart(0).unwrap();
         assert!(parts.len() == 2);
 
-        let mut msg: Message = protobuf::parse_from_bytes(&parts.pop().unwrap()).unwrap();
+        let mut msg: Message = Message::parse_from_bytes(&parts.pop().unwrap()).unwrap();
         let connection_id = parts.pop().unwrap();
         assert!(msg.get_message_type() == request_type);
-        let request: O = protobuf::parse_from_bytes(&msg.get_content()).unwrap();
+        let request: O = O::parse_from_bytes(&msg.get_content()).unwrap();
 
         let correlation_id = msg.take_correlation_id();
         let mut msg = Message::new();
