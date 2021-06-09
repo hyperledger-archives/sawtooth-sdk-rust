@@ -118,7 +118,7 @@ impl MessageSender for ZmqMessageSender {
 
             match sender.send(SocketCommand::Send(msg)) {
                 Ok(_) => Ok(future),
-                Err(_) => Err(SendError::UnknownError),
+                Err(e) => Err(SendError::UnknownError(e.to_string())),
             }
         } else {
             Err(SendError::DisconnectedError)
@@ -139,7 +139,7 @@ impl MessageSender for ZmqMessageSender {
 
             match sender.send(SocketCommand::Send(msg)) {
                 Ok(_) => Ok(()),
-                Err(_) => Err(SendError::UnknownError),
+                Err(e) => Err(SendError::UnknownError(e.to_string())),
             }
         } else {
             Err(SendError::DisconnectedError)
@@ -224,6 +224,9 @@ impl SendReceiveStream {
         inbound_router: InboundRouter,
     ) -> Self {
         let socket = context.socket(zmq::DEALER).unwrap();
+        socket
+            .set_linger(0)
+            .expect("Failed to set socket linger value");
         socket
             .monitor(
                 "inproc://monitor-socket",

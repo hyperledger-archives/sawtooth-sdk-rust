@@ -16,6 +16,8 @@
  * -----------------------------------------------------------------------------
  */
 
+use std::time::Duration;
+
 use protobuf::Message as M;
 use protobuf::RepeatedField;
 
@@ -42,6 +44,7 @@ use super::generate_correlation_id;
 pub struct ZmqTransactionContext {
     context_id: String,
     sender: ZmqMessageSender,
+    timeout: Option<Duration>,
 }
 
 impl ZmqTransactionContext {
@@ -57,6 +60,19 @@ impl ZmqTransactionContext {
         ZmqTransactionContext {
             context_id: String::from(context_id),
             sender,
+            timeout: None,
+        }
+    }
+
+    pub fn with_timeout(
+        context_id: &str,
+        sender: ZmqMessageSender,
+        timeout: Option<Duration>,
+    ) -> Self {
+        ZmqTransactionContext {
+            context_id: String::from(context_id),
+            sender,
+            timeout,
         }
     }
 }
@@ -85,7 +101,9 @@ impl TransactionContext for ZmqTransactionContext {
             x,
         )?;
 
-        let response = TpStateGetResponse::parse_from_bytes(future.get()?.get_content())?;
+        let response = TpStateGetResponse::parse_from_bytes(
+            future.get_maybe_timeout(self.timeout)?.get_content(),
+        )?;
         match response.get_status() {
             TpStateGetResponse_Status::OK => {
                 let mut entries = Vec::new();
@@ -139,7 +157,9 @@ impl TransactionContext for ZmqTransactionContext {
             x,
         )?;
 
-        let response = TpStateSetResponse::parse_from_bytes(future.get()?.get_content())?;
+        let response = TpStateSetResponse::parse_from_bytes(
+            future.get_maybe_timeout(self.timeout)?.get_content(),
+        )?;
         match response.get_status() {
             TpStateSetResponse_Status::OK => Ok(()),
             TpStateSetResponse_Status::AUTHORIZATION_ERROR => {
@@ -175,7 +195,9 @@ impl TransactionContext for ZmqTransactionContext {
             x,
         )?;
 
-        let response = TpStateDeleteResponse::parse_from_bytes(future.get()?.get_content())?;
+        let response = TpStateDeleteResponse::parse_from_bytes(
+            future.get_maybe_timeout(self.timeout)?.get_content(),
+        )?;
         match response.get_status() {
             TpStateDeleteResponse_Status::OK => Ok(Vec::from(response.get_addresses())),
             TpStateDeleteResponse_Status::AUTHORIZATION_ERROR => {
@@ -211,7 +233,9 @@ impl TransactionContext for ZmqTransactionContext {
             x,
         )?;
 
-        let response = TpReceiptAddDataResponse::parse_from_bytes(future.get()?.get_content())?;
+        let response = TpReceiptAddDataResponse::parse_from_bytes(
+            future.get_maybe_timeout(self.timeout)?.get_content(),
+        )?;
         match response.get_status() {
             TpReceiptAddDataResponse_Status::OK => Ok(()),
             TpReceiptAddDataResponse_Status::ERROR => Err(ContextError::TransactionReceiptError(
@@ -267,7 +291,9 @@ impl TransactionContext for ZmqTransactionContext {
             x,
         )?;
 
-        let response = TpEventAddResponse::parse_from_bytes(future.get()?.get_content())?;
+        let response = TpEventAddResponse::parse_from_bytes(
+            future.get_maybe_timeout(self.timeout)?.get_content(),
+        )?;
         match response.get_status() {
             TpEventAddResponse_Status::OK => Ok(()),
             TpEventAddResponse_Status::ERROR => Err(ContextError::TransactionReceiptError(
@@ -292,7 +318,9 @@ impl TransactionContext for ZmqTransactionContext {
             &serialized,
         )?;
 
-        let response = ClientBlockGetResponse::parse_from_bytes(future.get()?.get_content())?;
+        let response = ClientBlockGetResponse::parse_from_bytes(
+            future.get_maybe_timeout(self.timeout)?.get_content(),
+        )?;
         match response.get_status() {
             ClientBlockGetResponse_Status::OK => {
                 let raw_header = &response.get_block().header;
@@ -327,8 +355,9 @@ impl TransactionContext for ZmqTransactionContext {
             &serialized,
         )?;
 
-        let response =
-            ClientRewardBlockListResponse::parse_from_bytes(future.get()?.get_content())?;
+        let response = ClientRewardBlockListResponse::parse_from_bytes(
+            future.get_maybe_timeout(self.timeout)?.get_content(),
+        )?;
         match response.get_status() {
             ClientRewardBlockListResponse_Status::OK => {
                 let blocks = response.get_blocks();
@@ -374,8 +403,9 @@ impl TransactionContext for ZmqTransactionContext {
                 &serialized,
             )?;
 
-            let mut response =
-                ClientStateListResponse::parse_from_bytes(future.get()?.get_content())?;
+            let mut response = ClientStateListResponse::parse_from_bytes(
+                future.get_maybe_timeout(self.timeout)?.get_content(),
+            )?;
             match response.get_status() {
                 ClientStateListResponse_Status::OK => {
                     root = response.take_state_root();
