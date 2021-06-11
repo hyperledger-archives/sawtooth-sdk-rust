@@ -57,11 +57,11 @@ pub enum ContextError {
     /// Returned when there is an issues setting receipt data or events.
     TransactionReceiptError(String),
     /// Returned when a ProtobufError is returned during serializing
-    SerializationError(Box<dyn StdError>),
+    SerializationError(Box<dyn StdError + Send + Sync + 'static>),
     /// Returned when an error is returned when sending a message
-    SendError(Box<dyn StdError>),
+    SendError(Box<dyn StdError + Send + Sync + 'static>),
     /// Returned when an error is returned when sending a message
-    ReceiveError(Box<dyn StdError>),
+    ReceiveError(Box<dyn StdError + Send + Sync + 'static>),
 }
 
 impl std::error::Error for ContextError {
