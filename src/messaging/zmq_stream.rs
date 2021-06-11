@@ -234,6 +234,9 @@ impl SendReceiveStream {
             )
             .unwrap_or(());
         let monitor_socket = context.socket(zmq::PAIR).unwrap();
+        monitor_socket
+            .set_linger(0)
+            .expect("Failed to set socket linger value");
 
         let identity = uuid::Uuid::new(uuid::UuidVersion::Random).unwrap();
         socket.set_identity(identity.as_bytes()).unwrap();
@@ -308,8 +311,8 @@ impl SendReceiveStream {
 
         debug!("Exited stream");
         self.socket.disconnect(&self.address).unwrap();
-        self.monitor_socket
-            .disconnect("inproc://monitor-socket")
-            .unwrap();
+        if let Err(e) = self.monitor_socket.disconnect("inproc://monitor-socket") {
+            log::warn!("Monitor socket disconnect error: {}", e)
+        }
     }
 }

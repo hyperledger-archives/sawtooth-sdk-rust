@@ -83,6 +83,13 @@ impl EmptyTransactionContext {
             _sender,
         }
     }
+    pub fn flush(&self) {
+        if let Ok(rx) = self._receiver.try_lock() {
+            if let Ok(Ok(msg)) = rx.recv_timeout(Duration::from_millis(100)) {
+                log::info!("Empty context received message : {:?}", msg);
+            }
+        }
+    }
 }
 
 impl TransactionContext for EmptyTransactionContext {
