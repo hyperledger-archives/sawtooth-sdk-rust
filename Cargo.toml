@@ -36,7 +36,7 @@ experimental = []
 # Add support for loading PEM encoded private keys
 pem = ["openssl"]
 
-vendored = ["zmq/vendored"]
+vendored = ["zmq/vendored", "openssl/vendored"]
 
 [dependencies]
 hex = "0.3"
