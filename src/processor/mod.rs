@@ -58,13 +58,19 @@ fn generate_correlation_id() -> String {
     rand::thread_rng().gen_ascii_chars().take(LENGTH).collect()
 }
 
-pub struct TransactionProcessor<'a> {
-    endpoint: String,
-    conn: ZmqMessageConnection,
-    handlers: Vec<&'a dyn TransactionHandler>,
+pub struct EmptyTransactionContext {
+    inner: Arc<InnerEmptyContext>,
 }
 
-pub struct EmptyTransactionContext {
+impl Clone for EmptyTransactionContext {
+    fn clone(&self) -> Self {
+        Self {
+            inner: Arc::clone(&self.inner),
+        }
+    }
+}
+
+struct InnerEmptyContext {
     context: Box<dyn TransactionContext + Send + Sync>,
     _sender: ZmqMessageSender,
     _receiver: std::sync::Mutex<MessageReceiver>,
@@ -74,17 +80,19 @@ impl EmptyTransactionContext {
     fn new(conn: &ZmqMessageConnection, timeout: Option<Duration>) -> Self {
         let (_sender, _receiver) = conn.create();
         Self {
-            context: Box::new(ZmqTransactionContext::with_timeout(
-                "",
-                _sender.clone(),
-                timeout,
-            )),
-            _receiver: std::sync::Mutex::new(_receiver),
-            _sender,
+            inner: Arc::new(InnerEmptyContext {
+                context: Box::new(ZmqTransactionContext::with_timeout(
+                    "",
+                    _sender.clone(),
+                    timeout,
+                )),
+                _receiver: std::sync::Mutex::new(_receiver),
+                _sender,
+            }),
         }
     }
     pub fn flush(&self) {
-        if let Ok(rx) = self._receiver.try_lock() {
+        if let Ok(rx) = self.inner._receiver.try_lock() {
             if let Ok(Ok(msg)) = rx.recv_timeout(Duration::from_millis(100)) {
                 log::info!("Empty context received message : {:?}", msg);
             }
@@ -128,7 +136,7 @@ impl TransactionContext for EmptyTransactionContext {
     }
 
     fn get_sig_by_num(&self, block_num: u64) -> Result<String, handler::ContextError> {
-        self.context.get_sig_by_num(block_num)
+        self.inner.context.get_sig_by_num(block_num)
     }
 
     fn get_reward_block_signatures(
@@ -137,7 +145,8 @@ impl TransactionContext for EmptyTransactionContext {
         first_pred: u64,
         last_pred: u64,
     ) -> Result<Vec<String>, handler::ContextError> {
-        self.context
+        self.inner
+            .context
             .get_reward_block_signatures(block_id, first_pred, last_pred)
     }
 
@@ -145,8 +154,15 @@ impl TransactionContext for EmptyTransactionContext {
         &self,
         address: &str,
     ) -> Result<Vec<(String, Vec<u8>)>, handler::ContextError> {
-        self.context.get_state_entries_by_prefix(address)
+        self.inner.context.get_state_entries_by_prefix(address)
     }
+}
+
+pub struct TransactionProcessor<'a> {
+    endpoint: String,
+    conn: ZmqMessageConnection,
+    handlers: Vec<&'a dyn TransactionHandler>,
+    empty_contexts: Vec<EmptyTransactionContext>,
 }
 
 impl<'a> TransactionProcessor<'a> {
@@ -158,6 +174,7 @@ impl<'a> TransactionProcessor<'a> {
             endpoint: String::from(endpoint),
             conn: ZmqMessageConnection::new(endpoint),
             handlers: Vec::new(),
+            empty_contexts: Vec::new(),
         }
     }
 
@@ -170,8 +187,11 @@ impl<'a> TransactionProcessor<'a> {
         self.handlers.push(handler);
     }
 
-    pub fn empty_context(&self, timeout: Option<Duration>) -> EmptyTransactionContext {
-        EmptyTransactionContext::new(&self.conn, timeout)
+    pub fn empty_context(&mut self, timeout: Option<Duration>) -> EmptyTransactionContext {
+        let context = EmptyTransactionContext::new(&self.conn, timeout);
+        let context_cp = context.clone();
+        self.empty_contexts.push(context);
+        context_cp
     }
 
     fn register(&mut self, sender: &ZmqMessageSender, unregister: &Arc<AtomicBool>) -> bool {
