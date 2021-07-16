@@ -38,6 +38,9 @@ pem = ["openssl"]
 
 vendored = ["zmq/vendored", "openssl/vendored"]
 
+vendored-zmq = ["zmq/vendored"]
+vendored-openssl = ["openssl/vendored"]
+
 [dependencies]
 hex = "0.3"
 protobuf = "2"
