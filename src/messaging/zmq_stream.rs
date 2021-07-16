@@ -238,7 +238,7 @@ impl SendReceiveStream {
             .set_linger(0)
             .expect("Failed to set socket linger value");
 
-        let identity = uuid::Uuid::new(uuid::UuidVersion::Random).unwrap();
+        let identity = uuid::Uuid::new_v4();
         socket.set_identity(identity.as_bytes()).unwrap();
 
         SendReceiveStream {

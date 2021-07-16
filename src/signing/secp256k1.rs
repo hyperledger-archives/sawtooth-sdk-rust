@@ -25,8 +25,9 @@ use openssl::{
     pkey::Private as EcPrivate,
     symm::Cipher,
 };
-use rand::os::OsRng;
-use rand::Rng;
+use rand::rngs::OsRng;
+use rand::RngCore;
+use secp256k1::All;
 
 use crate::signing::bytes_to_hex_str;
 use crate::signing::hex_str_to_bytes;
@@ -140,7 +141,7 @@ impl PublicKey for Secp256k1PublicKey {
 }
 
 pub struct Secp256k1Context {
-    context: secp256k1::Secp256k1,
+    context: secp256k1::Secp256k1<All>,
 }
 
 impl Secp256k1Context {
@@ -168,11 +169,11 @@ impl Context for Secp256k1Context {
         let hash: &mut [u8] = &mut [0; 32];
         sha.result(hash);
 
-        let sk = secp256k1::key::SecretKey::from_slice(&self.context, key.as_slice())?;
+        let sk = secp256k1::key::SecretKey::from_slice(&key.as_slice())?;
         let sig = self
             .context
-            .sign(&secp256k1::Message::from_slice(hash)?, &sk)?;
-        let compact = sig.serialize_compact(&self.context);
+            .sign(&secp256k1::Message::from_slice(hash)?, &sk);
+        let compact = sig.serialize_compact();
         Ok(compact
             .iter()
             .map(|b| format!("{:02x}", b))
@@ -188,8 +189,8 @@ impl Context for Secp256k1Context {
 
         let result = self.context.verify(
             &secp256k1::Message::from_slice(hash)?,
-            &secp256k1::Signature::from_compact(&self.context, &hex_str_to_bytes(&signature)?)?,
-            &secp256k1::key::PublicKey::from_slice(&self.context, key.as_slice())?,
+            &secp256k1::Signature::from_compact(&hex_str_to_bytes(&signature)?)?,
+            &secp256k1::key::PublicKey::from_slice(key.as_slice())?,
         );
         match result {
             Ok(()) => Ok(true),
@@ -199,11 +200,10 @@ impl Context for Secp256k1Context {
     }
 
     fn get_public_key(&self, private_key: &dyn PrivateKey) -> Result<Box<dyn PublicKey>, Error> {
-        let sk = secp256k1::key::SecretKey::from_slice(&self.context, private_key.as_slice())?;
+        let sk = secp256k1::key::SecretKey::from_slice(private_key.as_slice())?;
         let result = Secp256k1PublicKey::from_hex(
             bytes_to_hex_str(
-                &secp256k1::key::PublicKey::from_secret_key(&self.context, &sk)?
-                    .serialize_vec(&self.context, true),
+                &secp256k1::key::PublicKey::from_secret_key(&self.context, &sk).serialize(),
             )
             .as_str(),
         );
@@ -214,7 +214,7 @@ impl Context for Secp256k1Context {
     }
 
     fn new_random_private_key(&self) -> Result<Box<dyn PrivateKey>, Error> {
-        let mut rng = OsRng::new().map_err(|err| Error::KeyGenError(format!("{}", err)))?;
+        let mut rng = OsRng;
         let mut key = [0u8; secp256k1::constants::SECRET_KEY_SIZE];
         rng.fill_bytes(&mut key);
         Ok(Box::new(Secp256k1PrivateKey {

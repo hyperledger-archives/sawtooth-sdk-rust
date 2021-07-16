@@ -15,6 +15,7 @@
  * ------------------------------------------------------------------------------
  */
 
+use rand::distributions::Alphanumeric;
 use rand::Rng;
 
 use crate::consensus::engine::*;
@@ -32,7 +33,11 @@ use std::time::Duration;
 /// Generates a random correlation id for use in Message
 fn generate_correlation_id() -> String {
     const LENGTH: usize = 16;
-    rand::thread_rng().gen_ascii_chars().take(LENGTH).collect()
+    rand::thread_rng()
+        .sample_iter(Alphanumeric)
+        .take(LENGTH)
+        .map(char::from)
+        .collect()
 }
 
 pub struct ZmqService {
