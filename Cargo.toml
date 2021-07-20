@@ -41,6 +41,8 @@ vendored = ["zmq/vendored", "openssl/vendored"]
 vendored-zmq = ["zmq/vendored"]
 vendored-openssl = ["openssl/vendored"]
 
+old-sawtooth = []
+
 [dependencies]
 hex = "0.4"
 protobuf = "2"

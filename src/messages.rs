@@ -19,3 +19,6 @@
 include!(concat!(env!("OUT_DIR"), "/messages/mod.rs"));
 
 pub use protobuf::Message;
+
+#[cfg(feature = "old-sawtooth")]
+pub use self::processor_old as processor;

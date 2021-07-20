@@ -81,5 +81,12 @@ fn glob_simple(pattern: &str) -> Vec<String> {
                 .expect("utf-8")
                 .to_owned()
         })
+        .filter(|p| {
+            if cfg!(feature = "old-sawtooth") {
+                !p.contains("processor.proto")
+            } else {
+                !p.contains("processor_old.proto")
+            }
+        })
         .collect()
 }
