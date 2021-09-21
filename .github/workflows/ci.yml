@@ -1,0 +1,50 @@
+name: ci
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+
+env:
+  ISOLATION_ID: ${{ github.run_id }}
+  COMPOSE_PROJECT_NAME: ${{ github.run_id }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        # needed for `git describe --dirty` when building docker images
+        fetch-depth: 0
+
+    - name: Docker version
+      run: |
+        docker --version
+        docker-compose --version
+
+    - name: Build Lint Requirements
+      run: |
+        docker-compose -f docker/compose/run-lint.yaml build
+        docker-compose -f docker/compose/sawtooth-build.yaml up
+        docker-compose -f docker/compose/sawtooth-build.yaml down
+
+    - name: Run Lint
+      run: |
+        docker-compose -f docker/compose/run-lint.yaml up --abort-on-container-exit --exit-code-from lint-rust lint-rust
+
+    - name: Run Tests
+      run: |
+        INSTALL_TYPE="" ./bin/run_tests
+
+    - name: Build Documentation
+      run: |
+        docker build . -f docs/Dockerfile -t sawtooth-sdk-rust-docs:$ISOLATION_ID
+        docker run --rm -v $(pwd):/project/sawtooth-sdk-rust sawtooth-sdk-rust-docs:$ISOLATION_ID
+
+    - name: Build/archive artifacts
+      run: |
+        REPO_VERSION=$(VERSION=AUTO_STRICT ./bin/get_version) docker-compose -f docker-compose-installed.yaml build
+        docker-compose -f docker/compose/copy-debs.yaml up
