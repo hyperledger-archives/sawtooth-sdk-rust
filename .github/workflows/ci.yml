@@ -41,10 +41,12 @@ jobs:
 
     - name: Build Documentation
       run: |
-        docker build . -f docs/Dockerfile -t sawtooth-sdk-rust-docs:$ISOLATION_ID
-        docker run --rm -v $(pwd):/project/sawtooth-sdk-rust sawtooth-sdk-rust-docs:$ISOLATION_ID
+        # skip, we don't need this for now
+        # docker build . -f docs/Dockerfile -t sawtooth-sdk-rust-docs:$ISOLATION_ID
+        # docker run --rm -v $(pwd):/project/sawtooth-sdk-rust sawtooth-sdk-rust-docs:$ISOLATION_ID
 
     - name: Build/archive artifacts
       run: |
-        REPO_VERSION=$(VERSION=AUTO_STRICT ./bin/get_version) docker-compose -f docker-compose-installed.yaml build
-        docker-compose -f docker/compose/copy-debs.yaml up
+        # skip, we don't need this for now
+        # REPO_VERSION=$(VERSION=AUTO_STRICT ./bin/get_version) docker-compose -f docker-compose-installed.yaml build
+        # docker-compose -f docker/compose/copy-debs.yaml up
