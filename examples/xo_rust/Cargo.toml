@@ -42,7 +42,7 @@ sabre-sdk = "0.4"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 rust-crypto = "0.2"
-sawtooth-sdk = { path = "../.." }
+sawtooth-sdk = { path = "../..", package = "sawtooth-sdk-creditcoin" }
 log = "0.4"
 log4rs = "0.8"
 

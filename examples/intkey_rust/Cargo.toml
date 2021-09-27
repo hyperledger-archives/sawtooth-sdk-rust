@@ -29,7 +29,7 @@ name = "sawtooth_intkey"
 path = "src/lib.rs"
 
 [dependencies]
-sawtooth-sdk = { path = "../.." }
+sawtooth-sdk = { path = "../..", package = "sawtooth-sdk-creditcoin" }
 rust-crypto = "0.2"
 clap = "2"
 log = "0.4"
