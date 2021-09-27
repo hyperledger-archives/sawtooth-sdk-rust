@@ -16,9 +16,20 @@
  * -----------------------------------------------------------------------------
  */
 
+use std::time::Duration;
+
 use protobuf::Message as M;
 use protobuf::RepeatedField;
 
+use crate::messages::block::BlockHeader;
+use crate::messages::client_block::{
+    ClientBlockGetByNumRequest, ClientBlockGetResponse, ClientBlockGetResponse_Status,
+    ClientRewardBlockListRequest, ClientRewardBlockListResponse,
+    ClientRewardBlockListResponse_Status,
+};
+use crate::messages::client_state::{
+    ClientStateListRequest, ClientStateListResponse, ClientStateListResponse_Status,
+};
 use crate::messages::events::Event;
 use crate::messages::events::Event_Attribute;
 use crate::messages::state_context::*;
@@ -33,6 +44,7 @@ use super::generate_correlation_id;
 pub struct ZmqTransactionContext {
     context_id: String,
     sender: ZmqMessageSender,
+    timeout: Option<Duration>,
 }
 
 impl ZmqTransactionContext {
@@ -48,6 +60,19 @@ impl ZmqTransactionContext {
         ZmqTransactionContext {
             context_id: String::from(context_id),
             sender,
+            timeout: None,
+        }
+    }
+
+    pub fn with_timeout(
+        context_id: &str,
+        sender: ZmqMessageSender,
+        timeout: Option<Duration>,
+    ) -> Self {
+        ZmqTransactionContext {
+            context_id: String::from(context_id),
+            sender,
+            timeout,
         }
     }
 }
@@ -76,7 +101,9 @@ impl TransactionContext for ZmqTransactionContext {
             x,
         )?;
 
-        let response: TpStateGetResponse = protobuf::parse_from_bytes(future.get()?.get_content())?;
+        let response = TpStateGetResponse::parse_from_bytes(
+            future.get_maybe_timeout(self.timeout)?.get_content(),
+        )?;
         match response.get_status() {
             TpStateGetResponse_Status::OK => {
                 let mut entries = Vec::new();
@@ -130,7 +157,9 @@ impl TransactionContext for ZmqTransactionContext {
             x,
         )?;
 
-        let response: TpStateSetResponse = protobuf::parse_from_bytes(future.get()?.get_content())?;
+        let response = TpStateSetResponse::parse_from_bytes(
+            future.get_maybe_timeout(self.timeout)?.get_content(),
+        )?;
         match response.get_status() {
             TpStateSetResponse_Status::OK => Ok(()),
             TpStateSetResponse_Status::AUTHORIZATION_ERROR => {
@@ -166,8 +195,9 @@ impl TransactionContext for ZmqTransactionContext {
             x,
         )?;
 
-        let response: TpStateDeleteResponse =
-            protobuf::parse_from_bytes(future.get()?.get_content())?;
+        let response = TpStateDeleteResponse::parse_from_bytes(
+            future.get_maybe_timeout(self.timeout)?.get_content(),
+        )?;
         match response.get_status() {
             TpStateDeleteResponse_Status::OK => Ok(Vec::from(response.get_addresses())),
             TpStateDeleteResponse_Status::AUTHORIZATION_ERROR => {
@@ -203,8 +233,9 @@ impl TransactionContext for ZmqTransactionContext {
             x,
         )?;
 
-        let response: TpReceiptAddDataResponse =
-            protobuf::parse_from_bytes(future.get()?.get_content())?;
+        let response = TpReceiptAddDataResponse::parse_from_bytes(
+            future.get_maybe_timeout(self.timeout)?.get_content(),
+        )?;
         match response.get_status() {
             TpReceiptAddDataResponse_Status::OK => Ok(()),
             TpReceiptAddDataResponse_Status::ERROR => Err(ContextError::TransactionReceiptError(
@@ -260,7 +291,9 @@ impl TransactionContext for ZmqTransactionContext {
             x,
         )?;
 
-        let response: TpEventAddResponse = protobuf::parse_from_bytes(future.get()?.get_content())?;
+        let response = TpEventAddResponse::parse_from_bytes(
+            future.get_maybe_timeout(self.timeout)?.get_content(),
+        )?;
         match response.get_status() {
             TpEventAddResponse_Status::OK => Ok(()),
             TpEventAddResponse_Status::ERROR => Err(ContextError::TransactionReceiptError(
@@ -269,6 +302,130 @@ impl TransactionContext for ZmqTransactionContext {
             TpEventAddResponse_Status::STATUS_UNSET => Err(ContextError::ResponseAttributeError(
                 String::from("Status was not set for TpEventAddRespons"),
             )),
+        }
+    }
+
+    fn get_sig_by_num(&self, block_num: u64) -> Result<String, ContextError> {
+        let mut request = ClientBlockGetByNumRequest::new();
+
+        request.set_block_num(block_num);
+
+        let serialized = request.write_to_bytes()?;
+
+        let mut future = self.sender.send(
+            Message_MessageType::CLIENT_BLOCK_GET_BY_NUM_REQUEST,
+            &generate_correlation_id(),
+            &serialized,
+        )?;
+
+        let response = ClientBlockGetResponse::parse_from_bytes(
+            future.get_maybe_timeout(self.timeout)?.get_content(),
+        )?;
+        match response.get_status() {
+            ClientBlockGetResponse_Status::OK => {
+                let raw_header = &response.get_block().header;
+                let header = BlockHeader::parse_from_bytes(raw_header)?;
+
+                Ok(header.signer_public_key)
+            }
+            err_status => Err(ContextError::ResponseAttributeError(format!(
+                "Failed to retrieve block by num : {:?}",
+                err_status
+            ))),
+        }
+    }
+
+    fn get_reward_block_signatures(
+        &self,
+        block_id: &str,
+        first_pred: u64,
+        last_pred: u64,
+    ) -> Result<Vec<String>, ContextError> {
+        let mut request = ClientRewardBlockListRequest::new();
+
+        request.set_head_id(block_id.into());
+        request.set_first_predecessor_height(first_pred);
+        request.set_last_predecessor_height(last_pred);
+
+        let serialized = request.write_to_bytes()?;
+
+        let mut future = self.sender.send(
+            Message_MessageType::CLIENT_REWARD_BLOCK_LIST_REQUEST,
+            &generate_correlation_id(),
+            &serialized,
+        )?;
+
+        let response = ClientRewardBlockListResponse::parse_from_bytes(
+            future.get_maybe_timeout(self.timeout)?.get_content(),
+        )?;
+        match response.get_status() {
+            ClientRewardBlockListResponse_Status::OK => {
+                let blocks = response.get_blocks();
+                let mut signatures = Vec::with_capacity(blocks.len());
+                for block in blocks {
+                    let raw_header = &block.header;
+                    let header = BlockHeader::parse_from_bytes(&raw_header)?;
+
+                    signatures.push(header.signer_public_key);
+                }
+
+                Ok(signatures)
+            }
+            err_status => Err(ContextError::ResponseAttributeError(format!(
+                "Failed to retrieve Reward Block List : {:?}",
+                err_status
+            ))),
+        }
+    }
+
+    fn get_state_entries_by_prefix(
+        &self,
+        address: &str,
+    ) -> Result<Vec<(String, Vec<u8>)>, ContextError> {
+        let mut start = String::new();
+        let mut root = String::new();
+
+        let mut entries = Vec::new();
+
+        loop {
+            let mut request = ClientStateListRequest::new();
+
+            request.set_state_root(root.clone());
+            request.mut_paging().set_start(start.clone());
+            request.mut_paging().set_limit(100);
+            request.set_address(address.into());
+
+            let serialized = request.write_to_bytes()?;
+
+            let mut future = self.sender.send(
+                Message_MessageType::CLIENT_STATE_LIST_REQUEST,
+                &generate_correlation_id(),
+                &serialized,
+            )?;
+
+            let mut response = ClientStateListResponse::parse_from_bytes(
+                future.get_maybe_timeout(self.timeout)?.get_content(),
+            )?;
+            match response.get_status() {
+                ClientStateListResponse_Status::OK => {
+                    root = response.take_state_root();
+                    start = response.mut_paging().take_next();
+                    entries.reserve(response.get_entries().len());
+
+                    for mut entry in response.take_entries() {
+                        entries.push((entry.take_address(), entry.take_data()));
+                    }
+                }
+                err_status => {
+                    return Err(ContextError::ResponseAttributeError(format!(
+                        "Failed to retrieve state entries : {:?}",
+                        err_status
+                    )))
+                }
+            }
+            if start.is_empty() {
+                return Ok(entries);
+            }
         }
     }
 }

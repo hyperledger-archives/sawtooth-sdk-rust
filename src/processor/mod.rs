@@ -39,29 +39,135 @@ use crate::messages::processor::TpProcessResponse_Status;
 use crate::messages::processor::TpRegisterRequest;
 use crate::messages::processor::TpUnregisterRequest;
 use crate::messages::validator::Message_MessageType;
-use crate::messaging::stream::MessageConnection;
 use crate::messaging::stream::MessageSender;
 use crate::messaging::stream::ReceiveError;
 use crate::messaging::stream::SendError;
+use crate::messaging::stream::{MessageConnection, MessageReceiver};
 use crate::messaging::zmq_stream::ZmqMessageConnection;
 use crate::messaging::zmq_stream::ZmqMessageSender;
 use protobuf::Message as M;
 use protobuf::RepeatedField;
+use rand::distributions::Alphanumeric;
 
-use self::handler::ApplyError;
 use self::handler::TransactionHandler;
+use self::handler::{ApplyError, TransactionContext};
 use self::zmq_context::ZmqTransactionContext;
 
 /// Generates a random correlation id for use in Message
 fn generate_correlation_id() -> String {
     const LENGTH: usize = 16;
-    rand::thread_rng().gen_ascii_chars().take(LENGTH).collect()
+    rand::thread_rng()
+        .sample_iter(Alphanumeric)
+        .take(LENGTH)
+        .map(char::from)
+        .collect()
+}
+
+pub struct EmptyTransactionContext {
+    inner: Arc<InnerEmptyContext>,
+}
+
+impl Clone for EmptyTransactionContext {
+    fn clone(&self) -> Self {
+        Self {
+            inner: Arc::clone(&self.inner),
+        }
+    }
+}
+
+struct InnerEmptyContext {
+    context: Box<dyn TransactionContext + Send + Sync>,
+    _sender: ZmqMessageSender,
+    _receiver: std::sync::Mutex<MessageReceiver>,
+}
+
+impl EmptyTransactionContext {
+    fn new(conn: &ZmqMessageConnection, timeout: Option<Duration>) -> Self {
+        let (_sender, _receiver) = conn.create();
+        Self {
+            inner: Arc::new(InnerEmptyContext {
+                context: Box::new(ZmqTransactionContext::with_timeout(
+                    "",
+                    _sender.clone(),
+                    timeout,
+                )),
+                _receiver: std::sync::Mutex::new(_receiver),
+                _sender,
+            }),
+        }
+    }
+    pub fn flush(&self) {
+        if let Ok(rx) = self.inner._receiver.try_lock() {
+            if let Ok(Ok(msg)) = rx.recv_timeout(Duration::from_millis(100)) {
+                log::info!("Empty context received message : {:?}", msg);
+            }
+        }
+    }
+}
+
+impl TransactionContext for EmptyTransactionContext {
+    fn get_state_entries(
+        &self,
+        _addresses: &[String],
+    ) -> Result<Vec<(String, Vec<u8>)>, handler::ContextError> {
+        panic!("unsupported for an empty context")
+    }
+
+    fn set_state_entries(
+        &self,
+        _entries: Vec<(String, Vec<u8>)>,
+    ) -> Result<(), handler::ContextError> {
+        panic!("unsupported for an empty context")
+    }
+
+    fn delete_state_entries(
+        &self,
+        _addresses: &[String],
+    ) -> Result<Vec<String>, handler::ContextError> {
+        panic!("unsupported for an empty context")
+    }
+
+    fn add_receipt_data(&self, _data: &[u8]) -> Result<(), handler::ContextError> {
+        panic!("unsupported for an empty context")
+    }
+
+    fn add_event(
+        &self,
+        _event_type: String,
+        _attributes: Vec<(String, String)>,
+        _data: &[u8],
+    ) -> Result<(), handler::ContextError> {
+        panic!("unsupported for an empty context")
+    }
+
+    fn get_sig_by_num(&self, block_num: u64) -> Result<String, handler::ContextError> {
+        self.inner.context.get_sig_by_num(block_num)
+    }
+
+    fn get_reward_block_signatures(
+        &self,
+        block_id: &str,
+        first_pred: u64,
+        last_pred: u64,
+    ) -> Result<Vec<String>, handler::ContextError> {
+        self.inner
+            .context
+            .get_reward_block_signatures(block_id, first_pred, last_pred)
+    }
+
+    fn get_state_entries_by_prefix(
+        &self,
+        address: &str,
+    ) -> Result<Vec<(String, Vec<u8>)>, handler::ContextError> {
+        self.inner.context.get_state_entries_by_prefix(address)
+    }
 }
 
 pub struct TransactionProcessor<'a> {
     endpoint: String,
     conn: ZmqMessageConnection,
     handlers: Vec<&'a dyn TransactionHandler>,
+    empty_contexts: Vec<EmptyTransactionContext>,
 }
 
 impl<'a> TransactionProcessor<'a> {
@@ -73,6 +179,7 @@ impl<'a> TransactionProcessor<'a> {
             endpoint: String::from(endpoint),
             conn: ZmqMessageConnection::new(endpoint),
             handlers: Vec::new(),
+            empty_contexts: Vec::new(),
         }
     }
 
@@ -83,6 +190,13 @@ impl<'a> TransactionProcessor<'a> {
     /// * handler - the handler to be added
     pub fn add_handler(&mut self, handler: &'a dyn TransactionHandler) {
         self.handlers.push(handler);
+    }
+
+    pub fn empty_context(&mut self, timeout: Option<Duration>) -> EmptyTransactionContext {
+        let context = EmptyTransactionContext::new(&self.conn, timeout);
+        let context_cp = context.clone();
+        self.empty_contexts.push(context);
+        context_cp
     }
 
     fn register(&mut self, sender: &ZmqMessageSender, unregister: &Arc<AtomicBool>) -> bool {
@@ -228,14 +342,15 @@ impl<'a> TransactionProcessor<'a> {
 
                         match message.get_message_type() {
                             Message_MessageType::TP_PROCESS_REQUEST => {
-                                let request: TpProcessRequest =
-                                    match protobuf::parse_from_bytes(&message.get_content()) {
-                                        Ok(request) => request,
-                                        Err(err) => {
-                                            error!("Cannot parse TpProcessRequest: {}", err);
-                                            continue;
-                                        }
-                                    };
+                                let request = match TpProcessRequest::parse_from_bytes(
+                                    &message.get_content(),
+                                ) {
+                                    Ok(request) => request,
+                                    Err(err) => {
+                                        error!("Cannot parse TpProcessRequest: {}", err);
+                                        continue;
+                                    }
+                                };
 
                                 let mut context = ZmqTransactionContext::new(
                                     request.get_context_id(),
@@ -288,9 +403,9 @@ impl<'a> TransactionProcessor<'a> {
                                         break;
                                     }
                                     Err(SendError::TimeoutError) => error!("TimeoutError"),
-                                    Err(SendError::UnknownError) => {
+                                    Err(SendError::UnknownError(e)) => {
                                         restart = false;
-                                        println!("UnknownError");
+                                        error!("UnknownError: {}", e);
                                         break;
                                     }
                                 };
@@ -316,9 +431,9 @@ impl<'a> TransactionProcessor<'a> {
                                         break;
                                     }
                                     Err(SendError::TimeoutError) => error!("TimeoutError"),
-                                    Err(SendError::UnknownError) => {
+                                    Err(SendError::UnknownError(e)) => {
                                         restart = false;
-                                        println!("UnknownError");
+                                        error!("UnknownError: {}", e);
                                         break;
                                     }
                                 };

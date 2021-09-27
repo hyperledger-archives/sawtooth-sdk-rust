@@ -57,11 +57,11 @@ pub enum ContextError {
     /// Returned when there is an issues setting receipt data or events.
     TransactionReceiptError(String),
     /// Returned when a ProtobufError is returned during serializing
-    SerializationError(Box<dyn StdError>),
+    SerializationError(Box<dyn StdError + Send + Sync + 'static>),
     /// Returned when an error is returned when sending a message
-    SendError(Box<dyn StdError>),
+    SendError(Box<dyn StdError + Send + Sync + 'static>),
     /// Returned when an error is returned when sending a message
-    ReceiveError(Box<dyn StdError>),
+    ReceiveError(Box<dyn StdError + Send + Sync + 'static>),
 }
 
 impl std::error::Error for ContextError {
@@ -260,6 +260,20 @@ pub trait TransactionContext {
         attributes: Vec<(String, String)>,
         data: &[u8],
     ) -> Result<(), ContextError>;
+
+    fn get_sig_by_num(&self, block_num: u64) -> Result<String, ContextError>;
+
+    fn get_reward_block_signatures(
+        &self,
+        block_id: &str,
+        first_pred: u64,
+        last_pred: u64,
+    ) -> Result<Vec<String>, ContextError>;
+
+    fn get_state_entries_by_prefix(
+        &self,
+        address: &str,
+    ) -> Result<Vec<(String, Vec<u8>)>, ContextError>;
 }
 
 pub trait TransactionHandler {

@@ -59,7 +59,7 @@ pub trait MessageConnection<MS: MessageSender> {
 pub enum SendError {
     DisconnectedError,
     TimeoutError,
-    UnknownError,
+    UnknownError(String),
 }
 
 impl std::error::Error for SendError {}
@@ -69,7 +69,7 @@ impl std::fmt::Display for SendError {
         match *self {
             SendError::DisconnectedError => write!(f, "DisconnectedError"),
             SendError::TimeoutError => write!(f, "TimeoutError"),
-            SendError::UnknownError => write!(f, "UnknownError"),
+            SendError::UnknownError(ref e) => write!(f, "UnknownError: {}", e),
         }
     }
 }
@@ -139,6 +139,14 @@ impl MessageFuture {
                 result
             }
             Err(_) => Err(ReceiveError::TimeoutError),
+        }
+    }
+
+    pub fn get_maybe_timeout(&mut self, timeout: Option<Duration>) -> MessageResult {
+        if let Some(timeout) = timeout {
+            self.get_timeout(timeout)
+        } else {
+            self.get()
         }
     }
 }

@@ -118,7 +118,7 @@ impl MessageSender for ZmqMessageSender {
 
             match sender.send(SocketCommand::Send(msg)) {
                 Ok(_) => Ok(future),
-                Err(_) => Err(SendError::UnknownError),
+                Err(e) => Err(SendError::UnknownError(e.to_string())),
             }
         } else {
             Err(SendError::DisconnectedError)
@@ -139,7 +139,7 @@ impl MessageSender for ZmqMessageSender {
 
             match sender.send(SocketCommand::Send(msg)) {
                 Ok(_) => Ok(()),
-                Err(_) => Err(SendError::UnknownError),
+                Err(e) => Err(SendError::UnknownError(e.to_string())),
             }
         } else {
             Err(SendError::DisconnectedError)
@@ -225,14 +225,20 @@ impl SendReceiveStream {
     ) -> Self {
         let socket = context.socket(zmq::DEALER).unwrap();
         socket
+            .set_linger(0)
+            .expect("Failed to set socket linger value");
+        socket
             .monitor(
                 "inproc://monitor-socket",
                 zmq::SocketEvent::DISCONNECTED as i32,
             )
             .unwrap_or(());
         let monitor_socket = context.socket(zmq::PAIR).unwrap();
+        monitor_socket
+            .set_linger(0)
+            .expect("Failed to set socket linger value");
 
-        let identity = uuid::Uuid::new(uuid::UuidVersion::Random).unwrap();
+        let identity = uuid::Uuid::new_v4();
         socket.set_identity(identity.as_bytes()).unwrap();
 
         SendReceiveStream {
@@ -263,7 +269,7 @@ impl SendReceiveStream {
                 if let Some(received_bytes) = received_parts.pop() {
                     trace!("Received {} bytes", received_bytes.len());
                     if !received_bytes.is_empty() {
-                        let message = protobuf::parse_from_bytes(&received_bytes).unwrap();
+                        let message = protobuf::Message::parse_from_bytes(&received_bytes).unwrap();
                         self.inbound_router.route(Ok(message));
                     }
                 } else {
@@ -305,8 +311,8 @@ impl SendReceiveStream {
 
         debug!("Exited stream");
         self.socket.disconnect(&self.address).unwrap();
-        self.monitor_socket
-            .disconnect("inproc://monitor-socket")
-            .unwrap();
+        if let Err(e) = self.monitor_socket.disconnect("inproc://monitor-socket") {
+            log::warn!("Monitor socket disconnect error: {}", e)
+        }
     }
 }
