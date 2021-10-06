@@ -45,7 +45,7 @@ old-sawtooth = []
 
 [dependencies]
 hex = "0.4"
-protobuf = "2"
+protobuf = "2.25"
 secp256k1 = "0.20"
 rand = "0.8"
 rust-crypto = "0.2"
