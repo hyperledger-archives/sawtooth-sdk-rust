@@ -1,0 +1,7 @@
+version = 1
+
+test_patterns = ["tests/**"]
+
+[[analyzers]]
+name = "rust"
+enabled = true
