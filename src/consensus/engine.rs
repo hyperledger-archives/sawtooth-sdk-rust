@@ -54,9 +54,9 @@ impl fmt::Debug for Block {
             f,
             "Block(block_num: {:?}, block_id: {:?}, previous_id: {:?}, signer_id: {:?}, payload: {}, summary: {})",
             self.block_num,
-            self.block_id,
-            self.previous_id,
-            self.signer_id,
+            hex::encode(&self.block_id),
+            hex::encode(&self.previous_id),
+            hex::encode(&self.signer_id),
             hex::encode(&self.payload),
             hex::encode(&self.summary),
         )
