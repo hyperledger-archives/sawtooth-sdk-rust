@@ -157,9 +157,10 @@ impl TransactionContext for EmptyTransactionContext {
 
     fn get_state_entries_by_prefix(
         &self,
+        tip_id: &str,
         address: &str,
     ) -> Result<Vec<(String, Vec<u8>)>, handler::ContextError> {
-        self.inner.context.get_state_entries_by_prefix(address)
+        self.inner.context.get_state_entries_by_prefix(tip_id, address)
     }
 }
 

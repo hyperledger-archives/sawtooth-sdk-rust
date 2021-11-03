@@ -380,10 +380,11 @@ impl TransactionContext for ZmqTransactionContext {
 
     fn get_state_entries_by_prefix(
         &self,
+        tip_id: &str,
         address: &str,
     ) -> Result<Vec<(String, Vec<u8>)>, ContextError> {
         let mut start = String::new();
-        let mut root = String::new();
+        let mut root: String = tip_id.into();
 
         let mut entries = Vec::new();
 
@@ -392,7 +393,10 @@ impl TransactionContext for ZmqTransactionContext {
 
             request.set_state_root(root.clone());
             request.mut_paging().set_start(start.clone());
-            request.mut_paging().set_limit(100);
+
+            //no need to set paging limit explicitely, the default one should work fine or better
+            //request.mut_paging().set_limit(100);
+
             request.set_address(address.into());
 
             let serialized = request.write_to_bytes()?;
