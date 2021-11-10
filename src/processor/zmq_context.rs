@@ -16,7 +16,7 @@
  * -----------------------------------------------------------------------------
  */
 
-use protobuf::Message as M;
+use protobuf::Message as ProtobufMessage;
 use protobuf::RepeatedField;
 
 use crate::messages::events::Event;
@@ -76,7 +76,8 @@ impl TransactionContext for ZmqTransactionContext {
             x,
         )?;
 
-        let response: TpStateGetResponse = protobuf::parse_from_bytes(future.get()?.get_content())?;
+        let response: TpStateGetResponse =
+            ProtobufMessage::parse_from_bytes(future.get()?.get_content())?;
         match response.get_status() {
             TpStateGetResponse_Status::OK => {
                 let mut entries = Vec::new();
@@ -130,7 +131,8 @@ impl TransactionContext for ZmqTransactionContext {
             x,
         )?;
 
-        let response: TpStateSetResponse = protobuf::parse_from_bytes(future.get()?.get_content())?;
+        let response: TpStateSetResponse =
+            ProtobufMessage::parse_from_bytes(future.get()?.get_content())?;
         match response.get_status() {
             TpStateSetResponse_Status::OK => Ok(()),
             TpStateSetResponse_Status::AUTHORIZATION_ERROR => {
@@ -167,7 +169,7 @@ impl TransactionContext for ZmqTransactionContext {
         )?;
 
         let response: TpStateDeleteResponse =
-            protobuf::parse_from_bytes(future.get()?.get_content())?;
+            ProtobufMessage::parse_from_bytes(future.get()?.get_content())?;
         match response.get_status() {
             TpStateDeleteResponse_Status::OK => Ok(Vec::from(response.get_addresses())),
             TpStateDeleteResponse_Status::AUTHORIZATION_ERROR => {
@@ -204,7 +206,7 @@ impl TransactionContext for ZmqTransactionContext {
         )?;
 
         let response: TpReceiptAddDataResponse =
-            protobuf::parse_from_bytes(future.get()?.get_content())?;
+            ProtobufMessage::parse_from_bytes(future.get()?.get_content())?;
         match response.get_status() {
             TpReceiptAddDataResponse_Status::OK => Ok(()),
             TpReceiptAddDataResponse_Status::ERROR => Err(ContextError::TransactionReceiptError(
@@ -260,7 +262,8 @@ impl TransactionContext for ZmqTransactionContext {
             x,
         )?;
 
-        let response: TpEventAddResponse = protobuf::parse_from_bytes(future.get()?.get_content())?;
+        let response: TpEventAddResponse =
+            ProtobufMessage::parse_from_bytes(future.get()?.get_content())?;
         match response.get_status() {
             TpEventAddResponse_Status::OK => Ok(()),
             TpEventAddResponse_Status::ERROR => Err(ContextError::TransactionReceiptError(

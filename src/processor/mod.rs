@@ -45,7 +45,7 @@ use crate::messaging::stream::ReceiveError;
 use crate::messaging::stream::SendError;
 use crate::messaging::zmq_stream::ZmqMessageConnection;
 use crate::messaging::zmq_stream::ZmqMessageSender;
-use protobuf::Message as M;
+use protobuf::Message as ProtobufMessage;
 use protobuf::RepeatedField;
 
 use self::handler::ApplyError;
@@ -229,7 +229,8 @@ impl<'a> TransactionProcessor<'a> {
                         match message.get_message_type() {
                             Message_MessageType::TP_PROCESS_REQUEST => {
                                 let request: TpProcessRequest =
-                                    match protobuf::parse_from_bytes(&message.get_content()) {
+                                    match ProtobufMessage::parse_from_bytes(&message.get_content())
+                                    {
                                         Ok(request) => request,
                                         Err(err) => {
                                             error!("Cannot parse TpProcessRequest: {}", err);

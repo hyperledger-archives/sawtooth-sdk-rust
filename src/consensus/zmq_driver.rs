@@ -193,7 +193,7 @@ pub fn register(
         match msg.get_message_type() {
             Message_MessageType::CONSENSUS_REGISTER_RESPONSE => {
                 let mut response: ConsensusRegisterResponse =
-                    protobuf::parse_from_bytes(msg.get_content())?;
+                    ProtobufMessage::parse_from_bytes(msg.get_content())?;
 
                 match response.get_status() {
                     ConsensusRegisterResponse_Status::OK => {
@@ -281,7 +281,7 @@ fn wait_until_active(
             Ok(Ok(msg)) => {
                 if let CONSENSUS_NOTIFY_ENGINE_ACTIVATED = msg.get_message_type() {
                     let mut content: ConsensusNotifyEngineActivated =
-                        protobuf::parse_from_bytes(msg.get_content())?;
+                        ProtobufMessage::parse_from_bytes(msg.get_content())?;
 
                     ret = Ok(StartupState {
                         chain_head: content.take_chain_head().into(),
@@ -318,19 +318,19 @@ fn handle_update(
     let update = match msg.get_message_type() {
         CONSENSUS_NOTIFY_PEER_CONNECTED => {
             let mut request: ConsensusNotifyPeerConnected =
-                protobuf::parse_from_bytes(msg.get_content())?;
+                ProtobufMessage::parse_from_bytes(msg.get_content())?;
             Update::PeerConnected(request.take_peer_info().into())
         }
         CONSENSUS_NOTIFY_PEER_DISCONNECTED => {
             let mut request: ConsensusNotifyPeerDisconnected =
-                protobuf::parse_from_bytes(msg.get_content())?;
+                ProtobufMessage::parse_from_bytes(msg.get_content())?;
             Update::PeerDisconnected(request.take_peer_id())
         }
         CONSENSUS_NOTIFY_PEER_MESSAGE => {
             let mut request: ConsensusNotifyPeerMessage =
-                protobuf::parse_from_bytes(msg.get_content())?;
+                ProtobufMessage::parse_from_bytes(msg.get_content())?;
             let header: ConsensusPeerMessageHeader =
-                protobuf::parse_from_bytes(request.get_message().get_header())?;
+                ProtobufMessage::parse_from_bytes(request.get_message().get_header())?;
             let message = request.take_message();
             Update::PeerMessage(
                 from_consensus_peer_message(message, header),
@@ -339,22 +339,22 @@ fn handle_update(
         }
         CONSENSUS_NOTIFY_BLOCK_NEW => {
             let mut request: ConsensusNotifyBlockNew =
-                protobuf::parse_from_bytes(msg.get_content())?;
+                ProtobufMessage::parse_from_bytes(msg.get_content())?;
             Update::BlockNew(request.take_block().into())
         }
         CONSENSUS_NOTIFY_BLOCK_VALID => {
             let mut request: ConsensusNotifyBlockValid =
-                protobuf::parse_from_bytes(msg.get_content())?;
+                ProtobufMessage::parse_from_bytes(msg.get_content())?;
             Update::BlockValid(request.take_block_id())
         }
         CONSENSUS_NOTIFY_BLOCK_INVALID => {
             let mut request: ConsensusNotifyBlockInvalid =
-                protobuf::parse_from_bytes(msg.get_content())?;
+                ProtobufMessage::parse_from_bytes(msg.get_content())?;
             Update::BlockInvalid(request.take_block_id())
         }
         CONSENSUS_NOTIFY_BLOCK_COMMIT => {
             let mut request: ConsensusNotifyBlockCommit =
-                protobuf::parse_from_bytes(msg.get_content())?;
+                ProtobufMessage::parse_from_bytes(msg.get_content())?;
             Update::BlockCommit(request.take_block_id())
         }
         CONSENSUS_NOTIFY_ENGINE_DEACTIVATED => Update::Shutdown,
@@ -496,9 +496,9 @@ mod tests {
             .send_multipart(&[connection_id, &msg.write_to_bytes().unwrap()], 0)
             .unwrap();
         let msg: Message =
-            protobuf::parse_from_bytes(&socket.recv_multipart(0).unwrap()[1]).unwrap();
+            ProtobufMessage::parse_from_bytes(&socket.recv_multipart(0).unwrap()[1]).unwrap();
         assert!(msg.get_message_type() == response_type);
-        protobuf::parse_from_bytes(&msg.get_content()).unwrap()
+        ProtobufMessage::parse_from_bytes(&msg.get_content()).unwrap()
     }
 
     fn recv_rep<I: protobuf::Message, O: protobuf::Message>(
@@ -510,10 +510,10 @@ mod tests {
         let mut parts = socket.recv_multipart(0).unwrap();
         assert!(parts.len() == 2);
 
-        let mut msg: Message = protobuf::parse_from_bytes(&parts.pop().unwrap()).unwrap();
+        let mut msg: Message = ProtobufMessage::parse_from_bytes(&parts.pop().unwrap()).unwrap();
         let connection_id = parts.pop().unwrap();
         assert!(msg.get_message_type() == request_type);
-        let request: O = protobuf::parse_from_bytes(&msg.get_content()).unwrap();
+        let request: O = ProtobufMessage::parse_from_bytes(&msg.get_content()).unwrap();
 
         let correlation_id = msg.take_correlation_id();
         let mut msg = Message::new();
