@@ -46,7 +46,7 @@ rand = "0.4.2"
 rust-crypto = "0.2.36"
 zmq = "0.9"
 uuid = { version = "0.5", features = ["v4"] }
-log = "0.3"
+log = "0.4"
 libc = "0.2"
 ctrlc = { version = "3.0", features = ["termination"] }
 openssl = { version = "0.10", optional = true }
