@@ -92,7 +92,7 @@ impl XoPayload {
                     )));
                 }
             };
-            if space_parsed < 1 || space_parsed > 9 {
+            if !(1..=9).contains(&space_parsed) {
                 return Err(ApplyError::InvalidTransaction(String::from(
                     "Space must be an integer from 1 to 9",
                 )));
