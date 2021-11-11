@@ -244,13 +244,19 @@ pub struct IntkeyTransactionHandler {
     namespaces: Vec<String>,
 }
 
-impl IntkeyTransactionHandler {
-    pub fn new() -> IntkeyTransactionHandler {
+impl Default for IntkeyTransactionHandler {
+    fn default() -> Self {
         IntkeyTransactionHandler {
             family_name: "intkey".to_string(),
             family_versions: vec!["1.0".to_string()],
             namespaces: vec![get_intkey_prefix()],
         }
+    }
+}
+
+impl IntkeyTransactionHandler {
+    pub fn new() -> IntkeyTransactionHandler {
+        Self::default()
     }
 }
 
