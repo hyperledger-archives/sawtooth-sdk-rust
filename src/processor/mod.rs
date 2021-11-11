@@ -229,8 +229,7 @@ impl<'a> TransactionProcessor<'a> {
                         match message.get_message_type() {
                             Message_MessageType::TP_PROCESS_REQUEST => {
                                 let request: TpProcessRequest =
-                                    match ProtobufMessage::parse_from_bytes(&message.get_content())
-                                    {
+                                    match ProtobufMessage::parse_from_bytes(message.get_content()) {
                                         Ok(request) => request,
                                         Err(err) => {
                                             error!("Cannot parse TpProcessRequest: {}", err);
