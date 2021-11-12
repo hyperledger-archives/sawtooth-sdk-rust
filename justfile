@@ -1,4 +1,4 @@
-# Copyright 2018-2020 Cargill Incorporated
+# Copyright 2018-2021 Cargill Incorporated
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,6 +40,38 @@ build:
     done
     echo "\n\033[92mBuild Success\033[0m\n"
 
+build-docs:
+    #!/usr/bin/env sh
+    docker build . -f docs/Dockerfile -t sawtooth-sdk-rust-docs
+    docker run --rm -v $(pwd):/project/sawtooth-sdk-rust sawtooth-sdk-rust-docs
+
+ci:
+    just ci-lint
+    just ci-test
+    just ci-build-docs
+    just ci-build-artifacts
+
+ci-build-artifacts:
+    #!/usr/bin/env sh
+    REPO_VERSION=$(VERSION=AUTO_STRICT ./bin/get_version) \
+    docker-compose -f docker-compose-installed.yaml build
+    docker-compose -f docker/compose/copy-debs.yaml up
+    docker-compose -f docker/compose/copy-debs.yaml down
+
+ci-build-docs: build-docs
+
+ci-lint:
+    #!/usr/bin/env sh
+    docker-compose -f docker/compose/run-lint.yaml build
+    docker-compose -f docker/compose/run-lint.yaml up \
+        --abort-on-container-exit --exit-code-from lint-rust
+
+ci-test:
+    #!/usr/bin/env sh
+    docker-compose -f docker/compose/sawtooth-build.yaml up
+    docker-compose -f docker/compose/sawtooth-build.yaml down
+    INSTALL_TYPE="" ./bin/run_tests
+
 clean:
     #!/usr/bin/env sh
     set -e
@@ -58,7 +90,7 @@ copy-env:
     set -e
     find . -name .env | xargs -I '{}' sh -c "echo 'Copying to {}'; rsync .env {}"
 
-lint:
+lint: lint-ignore
     #!/usr/bin/env sh
     set -e
     echo "\033[1mcargo fmt -- --check\033[0m"
@@ -73,6 +105,12 @@ lint:
         done
     done
     echo "\n\033[92mLint Success\033[0m\n"
+
+lint-ignore:
+    #!/usr/bin/env sh
+    set -e
+    diff -u .dockerignore .gitignore
+    echo "\n\033[92mLint Ignore Files Success\033[0m\n"
 
 test:
     #!/usr/bin/env sh
