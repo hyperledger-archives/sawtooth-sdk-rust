@@ -53,5 +53,5 @@ FROM ubuntu:bionic
 COPY --from=intkey-rust-builder /project/examples/intkey_rust/target/debian/sawtooth-intkey-tp-rust_*.deb /tmp
 
 RUN apt-get update \
- && dpkg -i /tmp/sawtooth-intkey-tp-rust_*.deb || true \
+ && dpkg --unpack /tmp/sawtooth-intkey-tp-rust_*.deb \
  && apt-get -f -y install
