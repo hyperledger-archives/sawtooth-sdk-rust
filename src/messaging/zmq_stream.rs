@@ -21,6 +21,8 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
+use protobuf::Message as ProtobufMessage;
+
 use crate::messages::validator::Message;
 use crate::messages::validator::Message_MessageType;
 
@@ -263,7 +265,7 @@ impl SendReceiveStream {
                 if let Some(received_bytes) = received_parts.pop() {
                     trace!("Received {} bytes", received_bytes.len());
                     if !received_bytes.is_empty() {
-                        let message = protobuf::parse_from_bytes(&received_bytes).unwrap();
+                        let message = ProtobufMessage::parse_from_bytes(&received_bytes).unwrap();
                         self.inbound_router.route(Ok(message));
                     }
                 } else {
