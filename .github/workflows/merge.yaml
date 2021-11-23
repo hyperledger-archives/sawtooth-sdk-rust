@@ -1,0 +1,168 @@
+name: Merge
+
+on:
+  push:
+  schedule:
+    - cron: "0 7 * * *"
+
+env:
+  CARGO_TERM_COLOR: always
+  slack-channel: 'alerts'
+
+concurrency:
+  group: "${{ github.ref }}-${{ github.workflow }}"
+  cancel-in-progress: true
+
+jobs:
+
+  lint_sdk_rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Display envvars
+        run: env
+
+      - name: Install Just
+        run: curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | sudo bash -s -- --to /usr/local/bin
+
+      - name: Run Lint/Clippy
+        run: just ci-lint
+
+      - name: Notify Slack of Failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,author,job
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+
+  test_sdk_rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Display envvars
+        run: env
+
+      - name: Install Just
+        run: curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | sudo bash -s -- --to /usr/local/bin
+
+      - name: Test SDK Rust
+        run: just ci-test
+
+      - name: Notify Slack of Failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,author,job
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+
+  build_docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Display envvars
+        run: env
+
+      - name: Install Just
+        run: curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | sudo bash -s -- --to /usr/local/bin
+
+      - name: Build Docs
+        run: just ci-build-docs
+
+      - name: Archive Artifacts
+        run: zip -r sawtooth-sdk-rust-docs.zip docs/build/html/*
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: sawtooth-sdk-rust-docs
+          path: sawtooth-sdk-rust-docs.zip
+
+      - name: Notify Slack of Failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,author,job
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  build_artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Display envvars
+        run: env
+
+      - name: Install Just
+        run: curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | sudo bash -s -- --to /usr/local/bin
+
+      - name: Build Artifacts
+        run: just ci-build-artifacts
+
+      - name: Archive Artifacts
+        run: zip -r sawtooth-sdk-rust.zip build/*
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: sawtooth-sdk-rust
+          path: sawtooth-sdk-rust.zip
+
+      - name: Notify Slack of Failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,author,job
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  publish_artifacts:
+    needs: [lint_sdk_rust, test_sdk_rust, build_docs, build_artifacts]
+    if: >-
+      github.repository_owner == 'hyperledger'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Display envvars
+        run: env
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: sawtooth-sdk-rust
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: sawtooth-sdk-rust-docs
+
+      - name: Upload Artifacts To S3
+        run: |
+          export BRANCH=$(echo $GITHUB_REF | awk -F'/' '{ print $NF }')
+          echo $BRANCH
+          aws s3 cp ./sawtooth-sdk-rust.zip s3://${{ secrets.AWS_S3_BUCKET }}/sawtooth-sdk-rust/$BRANCH/
+          aws s3 cp ./sawtooth-sdk-rust-docs.zip s3://${{ secrets.AWS_S3_BUCKET }}/sawtooth-sdk-rust/$BRANCH/
+
+      - name: Notify Slack of Failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,author,job
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

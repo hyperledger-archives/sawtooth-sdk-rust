@@ -28,4 +28,4 @@ services:
     image: lint:${ISOLATION_ID}
     volumes:
       - ../../:/project/sawtooth-sdk-rust
-    command: run_lint_rust
+    command: just lint

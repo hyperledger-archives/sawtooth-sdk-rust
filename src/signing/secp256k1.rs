@@ -188,7 +188,7 @@ impl Context for Secp256k1Context {
 
         let result = self.context.verify(
             &secp256k1::Message::from_slice(hash)?,
-            &secp256k1::Signature::from_compact(&self.context, &hex_str_to_bytes(&signature)?)?,
+            &secp256k1::Signature::from_compact(&self.context, &hex_str_to_bytes(signature)?)?,
             &secp256k1::key::PublicKey::from_slice(&self.context, key.as_slice())?,
         );
         match result {

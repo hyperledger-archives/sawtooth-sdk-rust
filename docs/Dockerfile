@@ -20,6 +20,8 @@ RUN apt-get update \
  && apt-get install -y \
  curl \
  gcc \
+ libssl-dev \
+ libzmq3-dev \
  pkg-config \
  unzip
 

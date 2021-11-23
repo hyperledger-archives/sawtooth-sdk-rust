@@ -244,13 +244,19 @@ pub struct IntkeyTransactionHandler {
     namespaces: Vec<String>,
 }
 
-impl IntkeyTransactionHandler {
-    pub fn new() -> IntkeyTransactionHandler {
+impl Default for IntkeyTransactionHandler {
+    fn default() -> Self {
         IntkeyTransactionHandler {
             family_name: "intkey".to_string(),
             family_versions: vec!["1.0".to_string()],
             namespaces: vec![get_intkey_prefix()],
         }
+    }
+}
+
+impl IntkeyTransactionHandler {
+    pub fn new() -> IntkeyTransactionHandler {
+        Self::default()
     }
 }
 
@@ -309,7 +315,7 @@ impl TransactionHandler for IntkeyTransactionHandler {
                     Ok(None) => (),
                     Err(err) => return Err(err),
                 };
-                state.set(&payload.get_name(), payload.get_value())
+                state.set(payload.get_name(), payload.get_value())
             }
             Verb::Increment => {
                 let orig_value: u32 = match state.get(payload.get_name()) {
@@ -328,7 +334,7 @@ impl TransactionHandler for IntkeyTransactionHandler {
                     )));
                 };
 
-                state.set(&payload.get_name(), orig_value + payload.get_value())
+                state.set(payload.get_name(), orig_value + payload.get_value())
             }
             Verb::Decrement => {
                 let orig_value: u32 = match state.get(payload.get_name()) {
@@ -345,7 +351,7 @@ impl TransactionHandler for IntkeyTransactionHandler {
                         "Value is too large to dec",
                     )));
                 };
-                state.set(&payload.get_name(), orig_value - payload.get_value())
+                state.set(payload.get_name(), orig_value - payload.get_value())
             }
         }
     }

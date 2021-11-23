@@ -32,7 +32,7 @@ pub struct XoPayload {
 impl XoPayload {
     // payload_data is a utf-8 encoded string
     pub fn new(payload_data: &[u8]) -> Result<XoPayload, ApplyError> {
-        let payload_string = match ::std::str::from_utf8(&payload_data) {
+        let payload_string = match ::std::str::from_utf8(payload_data) {
             Ok(s) => s,
             Err(_) => {
                 return Err(ApplyError::InvalidTransaction(String::from(
@@ -92,7 +92,7 @@ impl XoPayload {
                     )));
                 }
             };
-            if space_parsed < 1 || space_parsed > 9 {
+            if !(1..=9).contains(&space_parsed) {
                 return Err(ApplyError::InvalidTransaction(String::from(
                     "Space must be an integer from 1 to 9",
                 )));
