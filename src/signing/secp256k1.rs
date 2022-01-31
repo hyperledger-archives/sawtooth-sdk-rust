@@ -25,8 +25,8 @@ use openssl::{
     pkey::Private as EcPrivate,
     symm::Cipher,
 };
-use rand::os::OsRng;
-use rand::Rng;
+use rand::rngs::OsRng;
+use rand::RngCore;
 
 use crate::signing::bytes_to_hex_str;
 use crate::signing::hex_str_to_bytes;
@@ -213,9 +213,8 @@ impl Context for Secp256k1Context {
     }
 
     fn new_random_private_key(&self) -> Result<Box<dyn PrivateKey>, Error> {
-        let mut rng = OsRng::new().map_err(|err| Error::KeyGenError(format!("{}", err)))?;
         let mut key = [0u8; secp256k1::constants::SECRET_KEY_SIZE];
-        rng.fill_bytes(&mut key);
+        OsRng.fill_bytes(&mut key);
         Ok(Box::new(Secp256k1PrivateKey {
             private: Vec::from(&key[..]),
         }))

@@ -42,7 +42,7 @@ pem = ["openssl"]
 hex = "0.4"
 protobuf="2"
 secp256k1 = "0.21"
-rand = "0.4.2"
+rand = { version = "0.8", features = ["getrandom"]}
 rust-crypto = "0.2.36"
 zmq = "0.9"
 uuid = { version = "0.5", features = ["v4"] }
