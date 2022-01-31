@@ -23,7 +23,6 @@ description = """\
     Hyperledger Sawtooth is an enterprise blockchain platform for building \
     distributed ledger applications and networks.
 """
-documentation = "https://sawtooth.hyperledger.org/docs/core/releases/latest/"
 edition = "2018"
 
 [features]
