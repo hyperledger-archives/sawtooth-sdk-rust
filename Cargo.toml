@@ -41,7 +41,7 @@ pem = ["openssl"]
 [dependencies]
 hex = "0.4"
 protobuf="2"
-secp256k1 = "0.7.1"
+secp256k1 = "0.21"
 rand = "0.4.2"
 rust-crypto = "0.2.36"
 zmq = "0.9"
