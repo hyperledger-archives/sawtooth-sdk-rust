@@ -234,7 +234,7 @@ impl SendReceiveStream {
             .unwrap_or(());
         let monitor_socket = context.socket(zmq::PAIR).unwrap();
 
-        let identity = uuid::Uuid::new(uuid::UuidVersion::Random).unwrap();
+        let identity = uuid::Uuid::new_v4();
         socket.set_identity(identity.as_bytes()).unwrap();
 
         SendReceiveStream {
