@@ -41,11 +41,11 @@ pem = ["openssl"]
 [dependencies]
 hex = "0.4"
 protobuf="2"
-secp256k1 = "0.7.1"
-rand = "0.4.2"
+secp256k1 = "0.21"
+rand = { version = "0.8", features = ["getrandom"]}
 rust-crypto = "0.2.36"
 zmq = "0.9"
-uuid = { version = "0.5", features = ["v4"] }
+uuid = { version = "0.8", features = ["v4"] }
 log = "0.4"
 libc = "0.2"
 ctrlc = { version = "3.0", features = ["termination"] }

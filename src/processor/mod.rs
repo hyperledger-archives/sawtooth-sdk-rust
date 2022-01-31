@@ -27,7 +27,7 @@ use std::sync::mpsc::RecvTimeoutError;
 use std::sync::Arc;
 use std::time::Duration;
 
-use self::rand::Rng;
+use rand::{distributions::Alphanumeric, Rng};
 
 pub mod handler;
 mod zmq_context;
@@ -55,7 +55,12 @@ use self::zmq_context::ZmqTransactionContext;
 /// Generates a random correlation id for use in Message
 fn generate_correlation_id() -> String {
     const LENGTH: usize = 16;
-    rand::thread_rng().gen_ascii_chars().take(LENGTH).collect()
+    let mut rng = rand::thread_rng();
+    [0..LENGTH]
+        .iter()
+        .map(|_| rng.sample(Alphanumeric))
+        .map(char::from)
+        .collect::<String>()
 }
 
 pub struct TransactionProcessor<'a> {

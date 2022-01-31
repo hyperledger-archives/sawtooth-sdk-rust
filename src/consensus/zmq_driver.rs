@@ -16,7 +16,7 @@
  */
 
 use protobuf::{Message as ProtobufMessage, ProtobufError, RepeatedField};
-use rand::Rng;
+use rand::{distributions::Alphanumeric, Rng};
 
 use crate::consensus::engine::*;
 use crate::consensus::zmq_service::ZmqService;
@@ -43,7 +43,12 @@ const MAX_RETRY_DELAY: Duration = Duration::from_secs(3);
 /// Generates a random correlation id for use in Message
 fn generate_correlation_id() -> String {
     const LENGTH: usize = 16;
-    rand::thread_rng().gen_ascii_chars().take(LENGTH).collect()
+    let mut rng = rand::thread_rng();
+    [0..LENGTH]
+        .iter()
+        .map(|_| rng.sample(Alphanumeric))
+        .map(char::from)
+        .collect::<String>()
 }
 
 pub struct ZmqDriver {
