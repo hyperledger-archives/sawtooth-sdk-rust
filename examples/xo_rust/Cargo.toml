@@ -35,7 +35,7 @@ path = "src/main.rs"
 [dependencies]
 clap = "2"
 cfg-if = "0.1"
-sha2 = "0.8"
+sha2 = "0.10"
 hex = "0.4"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
