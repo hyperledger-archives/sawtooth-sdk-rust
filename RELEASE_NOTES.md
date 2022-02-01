@@ -1,5 +1,25 @@
 # Release Notes
 
+## Changes in Sawtooth Rust SDK 0.5.2
+
+### SDK
+
+* Update dependencies: glob, hex, log, rand, secp256k1, uuid
+
+* Update dev-dependencies: env_logger
+
+* Replace rust-crypto with sha2
+
+### Example: XO
+
+* Replace rust-crypto with sha2
+
+### Example: Intkey
+
+* Replace rust-crypto with sha2
+
+* Add `Default` implementation for `IntkeyTransactionHandler`
+
 ## Changes in Sawtooth Rust SDK 0.5.1
 
 * Rename `sawtooth_xo` to `xo` for Transact compatibility.
