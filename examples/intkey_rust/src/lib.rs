@@ -15,10 +15,10 @@
  * -----------------------------------------------------------------------------
  */
 extern crate cbor;
-extern crate crypto;
 #[macro_use]
 extern crate log;
 extern crate log4rs;
 extern crate sawtooth_sdk;
+extern crate sha2;
 
 pub mod handler;
