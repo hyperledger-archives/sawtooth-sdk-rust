@@ -48,7 +48,7 @@ impl<'a> XoState<'a> {
     }
 
     fn calculate_address(name: &str) -> String {
-        let sha = hex::encode(Sha512::digest(name.as_bytes()))[64..].to_string();
+        let sha = hex::encode(Sha512::digest(name.as_bytes()))[..64].to_string();
         get_xo_prefix() + &sha
     }
 
