@@ -15,7 +15,7 @@
 
 [package]
 name = "sawtooth-sdk"
-version = "0.5.2"
+version = "0.5.3"
 authors = ["Bitwise IO, Inc.", "Intel Corporation"]
 build = "build.rs"
 license = "Apache-2.0"
