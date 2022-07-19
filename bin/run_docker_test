@@ -233,7 +233,7 @@ def load_compose_file(compose_file):
     try:
         with open(compose_file) as fd:
             contents = fd.read()
-        compose = yaml.load(contents)
+        compose = yaml.safe_load(contents)
         return compose
 
     except OSError:
