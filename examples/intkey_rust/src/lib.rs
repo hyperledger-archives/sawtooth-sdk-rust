@@ -18,6 +18,7 @@ extern crate cbor;
 #[macro_use]
 extern crate log;
 extern crate log4rs;
+extern crate protobuf;
 extern crate sawtooth_sdk;
 extern crate sha2;
 

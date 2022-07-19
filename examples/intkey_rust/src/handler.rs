@@ -28,6 +28,7 @@ use cbor::encoder::GenericEncoder;
 use cbor::value::Key;
 use cbor::value::Text;
 use cbor::value::Value;
+use protobuf::Message as _;
 
 use sawtooth_sdk::messages::processor::TpProcessRequest;
 use sawtooth_sdk::messages::transaction::TransactionHeader;
@@ -292,15 +293,14 @@ impl TransactionHandler for IntkeyTransactionHandler {
         let mut state = IntkeyState::new(context);
 
         // Got transaction header bytes, de-serialize it to get input and output fields
-        let header: TransactionHeader =
-            match protobuf::parse_from_bytes(&request.get_header_bytes()) {
-                Ok(transaction_header) => transaction_header,
-                Err(_) => {
-                    return Err(ApplyError::InvalidTransaction(String::from(
-                        "Failed to de-serialize header bytes from request",
-                    )));
-                }
-            };
+        let header = match TransactionHeader::parse_from_bytes(request.get_header_bytes()) {
+            Ok(transaction_header) => transaction_header,
+            Err(_) => {
+                return Err(ApplyError::InvalidTransaction(String::from(
+                    "Failed to de-serialize header bytes from request",
+                )));
+            }
+        };
 
         info!(
             "payload: {} {} {} {} {}",

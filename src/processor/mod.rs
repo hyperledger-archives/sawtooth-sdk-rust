@@ -66,13 +66,6 @@ enum FeatureVersion {
     FeatureCustomHeaderStyle = 1,
 }
 
-impl FeatureVersion {
-    pub const FEATURE_UNUSED: FeatureVersion = FeatureVersion::FeatureUnused;
-    pub const FEATURE_CUSTOM_HEADER_STYLE: FeatureVersion =
-        FeatureVersion::FeatureCustomHeaderStyle;
-    pub const SDK_PROTOCOL_VERSION: FeatureVersion = FeatureVersion::FeatureCustomHeaderStyle;
-}
-
 /// Generates a random correlation id for use in Message
 fn generate_correlation_id() -> String {
     const LENGTH: usize = 16;
@@ -101,7 +94,7 @@ impl<'a> TransactionProcessor<'a> {
             endpoint: String::from(endpoint),
             conn: ZmqMessageConnection::new(endpoint),
             handlers: Vec::new(),
-            highest_sdk_feature_requested: FeatureVersion::FEATURE_UNUSED,
+            highest_sdk_feature_requested: FeatureVersion::FeatureUnused,
             header_style: TpRegisterRequest_TpProcessRequestHeaderStyle::HEADER_STYLE_UNSET,
         }
     }
@@ -138,7 +131,7 @@ impl<'a> TransactionProcessor<'a> {
                 request.set_version(version.clone());
                 request.set_namespaces(RepeatedField::from_vec(handler.namespaces().clone()));
                 request.set_protocol_version(self.highest_sdk_feature_requested.clone() as u32);
-                request.set_request_header_style(self.header_style.clone());
+                request.set_request_header_style(self.header_style);
                 info!(
                     "sending TpRegisterRequest: {} {}",
                     &handler.family_name(),
@@ -171,15 +164,16 @@ impl<'a> TransactionProcessor<'a> {
                 loop {
                     match future.get_timeout(Duration::from_millis(10000)) {
                         Ok(response) => {
-                            let resp: TpRegisterResponse =
-                                match protobuf::parse_from_bytes(&response.get_content()) {
-                                    Ok(read_response) => read_response,
-                                    Err(_) => {
-                                        unregister.store(true, Ordering::SeqCst);
-                                        error!("Error while unpacking TpRegisterResponse");
-                                        return false;
-                                    }
-                                };
+                            let resp = match TpRegisterResponse::parse_from_bytes(
+                                response.get_content(),
+                            ) {
+                                Ok(read_response) => read_response,
+                                Err(_) => {
+                                    unregister.store(true, Ordering::SeqCst);
+                                    error!("Error while unpacking TpRegisterResponse");
+                                    return false;
+                                }
+                            };
                             // Validator gives backward compatible support, do not proceed if SDK
                             // is expecting a feature which validator cannot provide
                             if resp.get_protocol_version()
