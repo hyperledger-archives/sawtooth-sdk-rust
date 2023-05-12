@@ -60,14 +60,14 @@ impl Secp256k1PrivateKey {
     pub fn from_pem(s: &str) -> Result<Self, Error> {
         let ec_key = EcKey::private_key_from_pem(s.as_bytes())?;
 
-        Self::from_hex(&ec_key.private_key().to_hex_str()?.to_string())
+        Self::from_hex(ec_key.private_key().to_hex_str()?.as_ref())
     }
 
     #[cfg(feature = "pem")]
     pub fn from_pem_with_password(s: &str, pw: &str) -> Result<Self, Error> {
         let ec_key = EcKey::private_key_from_pem_passphrase(s.as_bytes(), pw.as_bytes())?;
 
-        Self::from_hex(&ec_key.private_key().to_hex_str()?.to_string())
+        Self::from_hex(ec_key.private_key().to_hex_str()?.as_ref())
     }
 
     #[cfg(feature = "pem")]
