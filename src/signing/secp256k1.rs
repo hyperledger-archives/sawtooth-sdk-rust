@@ -167,7 +167,7 @@ impl Context for Secp256k1Context {
         let sk = secp256k1::SecretKey::from_slice(key.as_slice())?;
         let sig = self
             .context
-            .sign_ecdsa(&secp256k1::Message::from_slice(&*hash)?, &sk);
+            .sign_ecdsa(&secp256k1::Message::from_slice(&hash)?, &sk);
         let compact = sig.serialize_compact();
         Ok(compact
             .iter()
@@ -180,7 +180,7 @@ impl Context for Secp256k1Context {
         let hash = Sha256::digest(message);
 
         let result = self.context.verify_ecdsa(
-            &secp256k1::Message::from_slice(&*hash)?,
+            &secp256k1::Message::from_slice(&hash)?,
             &secp256k1::ecdsa::Signature::from_compact(&hex_str_to_bytes(signature)?)?,
             &secp256k1::PublicKey::from_slice(key.as_slice())?,
         );

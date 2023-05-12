@@ -85,7 +85,7 @@ pub enum ReceiveError {
 impl std::error::Error for ReceiveError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            ReceiveError::ChannelError(err) => Some(&*err),
+            ReceiveError::ChannelError(err) => Some(err),
             _ => None,
         }
     }
