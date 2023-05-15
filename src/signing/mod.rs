@@ -233,7 +233,7 @@ impl<'a> Signer<'a> {
 
 fn hex_str_to_bytes(s: &str) -> Result<Vec<u8>, Error> {
     for (i, ch) in s.chars().enumerate() {
-        if !ch.is_digit(16) {
+        if !ch.is_ascii_hexdigit() {
             return Err(Error::ParseError(format!(
                 "invalid character position {}",
                 i

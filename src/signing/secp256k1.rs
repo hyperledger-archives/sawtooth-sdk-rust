@@ -60,14 +60,14 @@ impl Secp256k1PrivateKey {
     pub fn from_pem(s: &str) -> Result<Self, Error> {
         let ec_key = EcKey::private_key_from_pem(s.as_bytes())?;
 
-        Self::from_hex(&ec_key.private_key().to_hex_str()?.to_string())
+        Self::from_hex(ec_key.private_key().to_hex_str()?.as_ref())
     }
 
     #[cfg(feature = "pem")]
     pub fn from_pem_with_password(s: &str, pw: &str) -> Result<Self, Error> {
         let ec_key = EcKey::private_key_from_pem_passphrase(s.as_bytes(), pw.as_bytes())?;
 
-        Self::from_hex(&ec_key.private_key().to_hex_str()?.to_string())
+        Self::from_hex(ec_key.private_key().to_hex_str()?.as_ref())
     }
 
     #[cfg(feature = "pem")]
@@ -167,7 +167,7 @@ impl Context for Secp256k1Context {
         let sk = secp256k1::SecretKey::from_slice(key.as_slice())?;
         let sig = self
             .context
-            .sign_ecdsa(&secp256k1::Message::from_slice(&*hash)?, &sk);
+            .sign_ecdsa(&secp256k1::Message::from_slice(&hash)?, &sk);
         let compact = sig.serialize_compact();
         Ok(compact
             .iter()
@@ -180,7 +180,7 @@ impl Context for Secp256k1Context {
         let hash = Sha256::digest(message);
 
         let result = self.context.verify_ecdsa(
-            &secp256k1::Message::from_slice(&*hash)?,
+            &secp256k1::Message::from_slice(&hash)?,
             &secp256k1::ecdsa::Signature::from_compact(&hex_str_to_bytes(signature)?)?,
             &secp256k1::PublicKey::from_slice(key.as_slice())?,
         );
