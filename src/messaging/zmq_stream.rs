@@ -120,7 +120,10 @@ impl MessageSender for ZmqMessageSender {
 
             match sender.send(SocketCommand::Send(msg)) {
                 Ok(_) => Ok(future),
-                Err(_) => Err(SendError::UnknownError),
+                Err(e) => {
+                    log::error!("Unable to send message: {:?}", e);
+                    Err(SendError::UnknownError)
+                }
             }
         } else {
             Err(SendError::DisconnectedError)
@@ -141,7 +144,10 @@ impl MessageSender for ZmqMessageSender {
 
             match sender.send(SocketCommand::Send(msg)) {
                 Ok(_) => Ok(()),
-                Err(_) => Err(SendError::UnknownError),
+                Err(e) => {
+                    log::error!("Unable to send message: {:?}", e);
+                    Err(SendError::UnknownError)
+                }
             }
         } else {
             Err(SendError::DisconnectedError)
@@ -152,7 +158,9 @@ impl MessageSender for ZmqMessageSender {
         if let Some(ref sender) = self.outbound_sender.take() {
             match sender.send(SocketCommand::Shutdown) {
                 Ok(_) => (),
-                Err(_) => info!("Sender has already closed."),
+                Err(_) => {
+                    info!("Sender has already closed.")
+                }
             }
         }
     }
@@ -176,23 +184,27 @@ impl InboundRouter {
             Ok(message) => {
                 let mut expected_replies = self.expected_replies.lock().unwrap();
                 match expected_replies.remove(message.get_correlation_id()) {
-                    Some(sender) => sender.send(Ok(message)).expect("Unable to route reply"),
+                    Some(sender) => sender
+                        .send(Ok(message))
+                        .map_err(|e| log::warn!("Unable to route reply: {:?}", e))
+                        .ok(),
                     None => self
                         .inbound_tx
                         .send(Ok(message))
-                        .expect("Unable to route new message"),
-                }
+                        .map_err(|e| log::warn!("Unable to route new message: {:?}", e))
+                        .ok(),
+                };
             }
             Err(ReceiveError::DisconnectedError) => {
                 let mut expected_replies = self.expected_replies.lock().unwrap();
                 for (_, sender) in expected_replies.iter_mut() {
                     sender
                         .send(Err(ReceiveError::DisconnectedError))
-                        .unwrap_or_else(|err| error!("Failed to send disconnect reply: {}", err));
+                        .unwrap_or_else(|err| warn!("Failed to send disconnect reply: {}", err));
                 }
                 self.inbound_tx
                     .send(Err(ReceiveError::DisconnectedError))
-                    .unwrap_or_else(|err| error!("Failed to send disconnect: {}", err));
+                    .unwrap_or_else(|err| warn!("Failed to send disconnect: {}", err));
             }
             Err(err) => error!("Error: {}", err),
         }
