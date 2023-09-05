@@ -23,7 +23,7 @@ description = """\
     Hyperledger Sawtooth is an enterprise blockchain platform for building \
     distributed ledger applications and networks.
 """
-repository = "http://github.com/hyperledger/sawtooth-sdk-rust"
+repository = "https://github.com/hyperledger/sawtooth-sdk-rust"
 edition = "2018"
 
 [features]
