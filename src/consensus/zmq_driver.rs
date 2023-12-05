@@ -44,7 +44,7 @@ const MAX_RETRY_DELAY: Duration = Duration::from_secs(3);
 fn generate_correlation_id() -> String {
     const LENGTH: usize = 16;
     let mut rng = rand::thread_rng();
-    [0..LENGTH]
+    [0; LENGTH]
         .iter()
         .map(|_| rng.sample(Alphanumeric))
         .map(char::from)
