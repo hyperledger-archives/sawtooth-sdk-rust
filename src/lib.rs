@@ -15,11 +15,16 @@
  * ------------------------------------------------------------------------------
  */
 
+#[cfg(feature = "zmq")]
 #[macro_use]
 extern crate log;
 
+#[cfg(feature = "consensus")]
 pub mod consensus;
 pub mod messages;
+#[cfg(feature = "messaging")]
 pub mod messaging;
+#[cfg(feature = "processor")]
 pub mod processor;
+#[cfg(feature = "signing")]
 pub mod signing;
