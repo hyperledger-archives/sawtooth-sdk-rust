@@ -27,7 +27,13 @@ repository = "https://github.com/hyperledger/sawtooth-sdk-rust"
 edition = "2018"
 
 [features]
-default = ["pem"]
+default = [
+    "consensus",
+    "messaging",
+    "processor",
+    "signing",
+    "pem",
+]
 
 stable = [
     "default",
@@ -35,20 +41,28 @@ stable = [
 
 experimental = []
 
+consensus = ["zmq"]
+
+messaging = ["zmq"]
+
+processor = ["messaging", "zmq", "ctrlc"]
+
+signing = ["secp256k1"]
+
 # Add support for loading PEM encoded private keys
-pem = ["openssl"]
+pem = ["signing", "openssl"]
 
 [dependencies]
 hex = "0.4"
-protobuf="2"
-secp256k1 = "0.27"
+protobuf = "2"
+secp256k1 = { version = "0.27", optional = true }
 rand = { version = "0.8", features = ["getrandom"]}
 sha2 = "0.10"
-zmq = "0.9"
+zmq = { version = "0.9", optional = true }
 uuid = { version = "0.8", features = ["v4"] }
 log = "0.4"
 libc = "0.2"
-ctrlc = { version = "3.0", features = ["termination"] }
+ctrlc = { version = "3.0", features = ["termination"], optional = true}
 openssl = { version = "0.10", optional = true }
 
 [dev-dependencies]
